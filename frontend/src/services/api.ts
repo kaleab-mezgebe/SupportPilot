@@ -1,6 +1,28 @@
-import type { ApiHealthStatus, DashboardStats, Ticket, KnowledgeArticle } from '../types';
+import type {
+  ApiHealthStatus,
+  DashboardStats,
+  Ticket,
+  TicketDetail,
+  TicketMessage,
+  KnowledgeArticle,
+  User,
+  AuthResponse,
+  UserRole,
+  TicketStatus
+} from '../types';
 
 const API_BASE_URL = 'http://localhost:5000/api';
+
+const getAuthHeaders = (customToken?: string): HeadersInit => {
+  const token = customToken || localStorage.getItem('supportpilot_token');
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json'
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+};
 
 const FALLBACK_TICKETS: Ticket[] = [
   {
@@ -65,10 +87,46 @@ const FALLBACK_TICKETS: Ticket[] = [
   }
 ];
 
+const FALLBACK_MESSAGES: Record<string, TicketMessage[]> = {
+  '11111111-1111-1111-1111-111111111111': [
+    {
+      id: 'm-1',
+      ticketId: '11111111-1111-1111-1111-111111111111',
+      senderName: 'Sarah Connor',
+      senderRole: 'Customer',
+      content: 'I followed DNS CNAME setup for support.mycompany.io but certificate validation timed out after 30 minutes.',
+      isInternalNote: false,
+      isAiGenerated: false,
+      createdAtUtc: new Date(Date.now() - 2 * 3600000).toISOString()
+    },
+    {
+      id: 'm-2',
+      ticketId: '11111111-1111-1111-1111-111111111111',
+      senderName: 'SupportPilot AI',
+      senderRole: 'AIAssistant',
+      content: 'Grounded Suggestion: Checking DNS CAA records. If your root DNS enforces strict CAA policies, Let\'s Encrypt issuance may require an explicit `0 issue letsencrypt.org` record.',
+      isInternalNote: true,
+      isAiGenerated: true,
+      createdAtUtc: new Date(Date.now() - 110 * 60000).toISOString()
+    },
+    {
+      id: 'm-3',
+      ticketId: '11111111-1111-1111-1111-111111111111',
+      senderName: 'Alex Rivera',
+      senderRole: 'SupportAgent',
+      content: 'Hi Sarah, looking into your DNS propagation now. Could you confirm if your nameservers are managed via Cloudflare with proxy enabled?',
+      isInternalNote: false,
+      isAiGenerated: false,
+      createdAtUtc: new Date(Date.now() - 15 * 60000).toISOString()
+    }
+  ]
+};
+
 const FALLBACK_ARTICLES: KnowledgeArticle[] = [
   {
     id: 'kb-1',
     title: 'Configuring custom domains and SSL termination',
+    slug: 'configuring-custom-domains-ssl',
     category: 'Setup & DNS',
     content: 'To point your custom domain to SupportPilot, create a CNAME record pointing to proxy.supportpilot.io. Automated Let\'s Encrypt SSL certificates are issued within 15 minutes of DNS propagation.',
     viewCount: 1240,
@@ -78,8 +136,9 @@ const FALLBACK_ARTICLES: KnowledgeArticle[] = [
   {
     id: 'kb-2',
     title: 'How Grounded AI Answers work with company docs',
+    slug: 'grounded-ai-answers-with-company-docs',
     category: 'AI & Automations',
-    content: 'SupportPilot indexes markdown and PDF documents into vector embeddings. When a customer submits a question, the semantic search retrieves the top matching chunks and passes them to our generative model for high-accuracy answers.',
+    content: 'SupportPilot indexes markdown and PDF documents into vector embeddings. When a customer submits a question, semantic search retrieves the top matching chunks and passes them to our generative model for high-accuracy answers.',
     viewCount: 890,
     isPublished: true,
     updatedAtUtc: new Date(Date.now() - 5 * 86400000).toISOString()
@@ -87,6 +146,7 @@ const FALLBACK_ARTICLES: KnowledgeArticle[] = [
   {
     id: 'kb-3',
     title: 'Managing Agent Permissions and Organization Roles',
+    slug: 'managing-agent-permissions-org-roles',
     category: 'Administration',
     content: 'Admins can assign roles: Support Agent, Support Manager, or System Admin. Permissions enforce queue restrictions and ensure multi-tenant security.',
     viewCount: 650,
@@ -96,6 +156,83 @@ const FALLBACK_ARTICLES: KnowledgeArticle[] = [
 ];
 
 export const ApiService = {
+  // --- Auth Endpoints ---
+  async login(email: string, password: string): Promise<AuthResponse> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch {
+      return {
+        token: 'mock_jwt_token_' + Date.now(),
+        user: {
+          id: '22222222-2222-2222-2222-222222222222',
+          email: email,
+          fullName: email.split('@')[0],
+          role: email.includes('admin') ? 'SystemAdministrator' : email.includes('agent') || email.includes('alex') ? 'SupportAgent' : 'Customer',
+          organizationName: 'SupportPilot HQ',
+          createdAtUtc: new Date().toISOString()
+        }
+      };
+    }
+  },
+
+  async register(data: { fullName: string; email: string; password: string; role?: UserRole; organizationName?: string }): Promise<AuthResponse> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch {
+      return {
+        token: 'mock_jwt_token_' + Date.now(),
+        user: {
+          id: crypto.randomUUID(),
+          email: data.email,
+          fullName: data.fullName,
+          role: data.role || 'Customer',
+          organizationName: data.organizationName || 'SupportPilot HQ',
+          createdAtUtc: new Date().toISOString()
+        }
+      };
+    }
+  },
+
+  async getCurrentUser(token?: string): Promise<User | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/me`, {
+        headers: getAuthHeaders(token)
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  },
+
+  async getSupportAgents(): Promise<User[]> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/agents`, {
+        headers: getAuthHeaders()
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch {
+      return [
+        { id: '22222222-2222-2222-2222-222222222222', email: 'alex.rivera@supportpilot.io', fullName: 'Alex Rivera', role: 'SupportAgent', createdAtUtc: new Date().toISOString() },
+        { id: '33333333-3333-3333-3333-333333333333', email: 'emma.watson@supportpilot.io', fullName: 'Emma Watson', role: 'SupportAgent', createdAtUtc: new Date().toISOString() }
+      ];
+    }
+  },
+
+  // --- Health & Dashboard ---
   async checkHealth(): Promise<ApiHealthStatus> {
     try {
       const res = await fetch(`${API_BASE_URL}/health`, { method: 'GET' });
@@ -114,7 +251,9 @@ export const ApiService = {
 
   async getDashboardStats(): Promise<DashboardStats> {
     try {
-      const res = await fetch(`${API_BASE_URL}/dashboard/stats`);
+      const res = await fetch(`${API_BASE_URL}/dashboard/stats`, {
+        headers: getAuthHeaders()
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
     } catch {
@@ -129,6 +268,7 @@ export const ApiService = {
     }
   },
 
+  // --- Tickets & Messages ---
   async getTickets(params?: { status?: string; priority?: string; search?: string }): Promise<Ticket[]> {
     try {
       const query = new URLSearchParams();
@@ -136,7 +276,9 @@ export const ApiService = {
       if (params?.priority && params.priority !== 'All') query.append('priority', params.priority);
       if (params?.search) query.append('search', params.search);
 
-      const res = await fetch(`${API_BASE_URL}/tickets?${query.toString()}`);
+      const res = await fetch(`${API_BASE_URL}/tickets?${query.toString()}`, {
+        headers: getAuthHeaders()
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
     } catch {
@@ -159,6 +301,36 @@ export const ApiService = {
     }
   },
 
+  async getTicketDetail(id: string): Promise<TicketDetail> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/tickets/${id}`, {
+        headers: getAuthHeaders()
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch {
+      const ticket = FALLBACK_TICKETS.find(t => t.id === id) || FALLBACK_TICKETS[0];
+      const messages = FALLBACK_MESSAGES[id] || [
+        {
+          id: 'm-fallback',
+          ticketId: ticket.id,
+          senderName: ticket.customerName,
+          senderRole: 'Customer',
+          content: ticket.description,
+          isInternalNote: false,
+          isAiGenerated: false,
+          createdAtUtc: ticket.createdAtUtc
+        }
+      ];
+
+      return {
+        ...ticket,
+        customerId: 'customer-1',
+        messages
+      };
+    }
+  },
+
   async createTicket(data: {
     title: string;
     description: string;
@@ -170,7 +342,7 @@ export const ApiService = {
     try {
       const res = await fetch(`${API_BASE_URL}/tickets`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(data)
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -196,7 +368,88 @@ export const ApiService = {
     }
   },
 
-  async getKnowledgeArticles(): Promise<KnowledgeArticle[]> {
-    return FALLBACK_ARTICLES;
+  async addTicketMessage(ticketId: string, data: { content: string; isInternalNote?: boolean; isAiGenerated?: boolean }): Promise<TicketMessage> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/tickets/${ticketId}/messages`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data)
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch {
+      const newMsg: TicketMessage = {
+        id: crypto.randomUUID(),
+        ticketId,
+        senderName: data.isInternalNote ? 'Alex Rivera (Internal)' : 'Alex Rivera',
+        senderRole: 'SupportAgent',
+        content: data.content,
+        isInternalNote: !!data.isInternalNote,
+        isAiGenerated: !!data.isAiGenerated,
+        createdAtUtc: new Date().toISOString()
+      };
+      if (!FALLBACK_MESSAGES[ticketId]) {
+        FALLBACK_MESSAGES[ticketId] = [];
+      }
+      FALLBACK_MESSAGES[ticketId].push(newMsg);
+      return newMsg;
+    }
+  },
+
+  async updateTicketStatus(ticketId: string, status: TicketStatus): Promise<Ticket> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/tickets/${ticketId}/status`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ status })
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch {
+      const ticket = FALLBACK_TICKETS.find(t => t.id === ticketId);
+      if (ticket) {
+        ticket.status = status;
+        ticket.updatedAtUtc = new Date().toISOString();
+        return ticket;
+      }
+      throw new Error('Ticket not found');
+    }
+  },
+
+  async assignTicket(ticketId: string, agentId: string | null): Promise<Ticket> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/tickets/${ticketId}/assign`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ agentId })
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch {
+      const ticket = FALLBACK_TICKETS.find(t => t.id === ticketId);
+      if (ticket) {
+        ticket.assignedAgentName = agentId ? 'Alex Rivera' : null;
+        ticket.updatedAtUtc = new Date().toISOString();
+        return ticket;
+      }
+      throw new Error('Ticket not found');
+    }
+  },
+
+  // --- Knowledge Base ---
+  async getKnowledgeArticles(search?: string, category?: string): Promise<KnowledgeArticle[]> {
+    try {
+      const query = new URLSearchParams();
+      if (search) query.append('search', search);
+      if (category && category !== 'All') query.append('category', category);
+
+      const res = await fetch(`${API_BASE_URL}/kb/articles?${query.toString()}`, {
+        headers: getAuthHeaders()
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch {
+      return FALLBACK_ARTICLES;
+    }
   }
 };

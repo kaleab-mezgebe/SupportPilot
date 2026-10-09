@@ -1,12 +1,82 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using SupportPilot.Api.Data;
+using SupportPilot.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+// Dependency Injection
+builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
+builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
+
+// Configure JWT Bearer Authentication
+var jwtSecretKey = builder.Configuration["Jwt:Key"] ?? "SupportPilot_Super_Secret_Key_For_Jwt_Auth_2026_Minimum_32_Bytes_Long!";
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "SupportPilot.Api";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "SupportPilot.Client";
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtIssuer,
+        ValidAudience = jwtAudience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecretKey))
+    };
+});
+
+builder.Services.AddAuthorization();
+
+// Configure Swagger with JWT Bearer Support
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "SupportPilot API",
+        Version = "v1",
+        Description = "AI-powered customer service platform backend"
+    });
+
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter JWT token in format: Bearer {token}"
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 // Configure CORS for local React development
 builder.Services.AddCors(options =>
@@ -36,11 +106,16 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 var app = builder.Build();
 
-// Seed database on startup
-using (var scope = app.Services.CreateScope())
+// Seed database on startup (with graceful handling if db is not yet reachable during pure unit run)
+try
 {
+    using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await DbInitializer.SeedAsync(dbContext);
+}
+catch (Exception ex)
+{
+    app.Logger.LogWarning(ex, "Database seeding was skipped or encountered an error (e.g. offline DB).");
 }
 
 // Configure the HTTP request pipeline
@@ -58,8 +133,12 @@ app.UseCors("AllowFrontend");
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
 
 app.Run();
+
+// Make Program visible to WebApplicationFactory integration tests
+public partial class Program { }

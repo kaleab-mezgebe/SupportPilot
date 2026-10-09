@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SupportPilot.Api.Entities;
+using SupportPilot.Api.Services;
 
 namespace SupportPilot.Api.Data;
 
@@ -13,6 +14,9 @@ public static class DbInitializer
         {
             return; // Already seeded
         }
+
+        var passwordHasher = new PasswordHasher();
+        var defaultPasswordHash = passwordHasher.HashPassword("Password123!");
 
         var org = new Organization
         {
@@ -28,7 +32,7 @@ public static class DbInitializer
             Id = Guid.NewGuid(),
             Email = "admin@supportpilot.io",
             FullName = "System Administrator",
-            PasswordHash = "hashed_pw",
+            PasswordHash = defaultPasswordHash,
             Role = UserRole.SystemAdministrator,
             OrganizationId = org.Id,
             CreatedAtUtc = DateTime.UtcNow
@@ -39,7 +43,7 @@ public static class DbInitializer
             Id = Guid.NewGuid(),
             Email = "alex.rivera@supportpilot.io",
             FullName = "Alex Rivera",
-            PasswordHash = "hashed_pw",
+            PasswordHash = defaultPasswordHash,
             Role = UserRole.SupportAgent,
             OrganizationId = org.Id,
             CreatedAtUtc = DateTime.UtcNow
@@ -50,7 +54,7 @@ public static class DbInitializer
             Id = Guid.NewGuid(),
             Email = "sarah@cyberdyne.io",
             FullName = "Sarah Connor",
-            PasswordHash = "hashed_pw",
+            PasswordHash = defaultPasswordHash,
             Role = UserRole.Customer,
             OrganizationId = org.Id,
             CreatedAtUtc = DateTime.UtcNow
@@ -100,7 +104,30 @@ public static class DbInitializer
             CreatedAtUtc = DateTime.UtcNow.AddHours(-2)
         };
 
+        var initialMsg = new TicketMessage
+        {
+            Id = Guid.NewGuid(),
+            TicketId = sampleTicket.Id,
+            SenderId = customer.Id,
+            Content = sampleTicket.Description,
+            IsInternalNote = false,
+            IsAiGenerated = false,
+            CreatedAtUtc = DateTime.UtcNow.AddHours(-2)
+        };
+
+        var agentReply = new TicketMessage
+        {
+            Id = Guid.NewGuid(),
+            TicketId = sampleTicket.Id,
+            SenderId = agent.Id,
+            Content = "Hi Sarah, looking into your DNS propagation right now. The TXT verification challenge appears valid.",
+            IsInternalNote = false,
+            IsAiGenerated = false,
+            CreatedAtUtc = DateTime.UtcNow.AddHours(-1)
+        };
+
         context.Tickets.Add(sampleTicket);
+        context.TicketMessages.AddRange(initialMsg, agentReply);
 
         var kb1 = new KnowledgeArticle
         {
@@ -114,7 +141,19 @@ public static class DbInitializer
             CreatedAtUtc = DateTime.UtcNow.AddDays(-5)
         };
 
-        context.KnowledgeArticles.Add(kb1);
+        var kb2 = new KnowledgeArticle
+        {
+            Id = Guid.NewGuid(),
+            Title = "Grounded AI Co-Pilot Retrieval Workflows",
+            Slug = "grounded-ai-copilot-retrieval",
+            Category = "AI & Knowledge Retrieval",
+            Content = "SupportPilot embeds indexed documentation into vector embeddings. When drafting ticket replies or answering customer queries, semantic search fetches relevant chunks to ground response suggestions.",
+            ViewCount = 890,
+            IsPublished = true,
+            CreatedAtUtc = DateTime.UtcNow.AddDays(-3)
+        };
+
+        context.KnowledgeArticles.AddRange(kb1, kb2);
 
         await context.SaveChangesAsync();
     }

@@ -1,4 +1,7 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using SupportPilot.Api.Data;
 using SupportPilot.Api.DTOs;
 using SupportPilot.Api.Entities;
 
@@ -8,124 +11,437 @@ namespace SupportPilot.Api.Controllers;
 [Route("api/[controller]")]
 public class TicketsController : ControllerBase
 {
-    private static readonly List<TicketDto> SampleTickets = new()
+    private readonly AppDbContext _dbContext;
+
+    public TicketsController(AppDbContext dbContext)
     {
-        new TicketDto(
-            Id: Guid.Parse("11111111-1111-1111-1111-111111111111"),
-            TicketReference: "SP-1042",
-            Title: "Unable to connect custom domain to workspace",
-            Description: "I followed DNS CNAME setup for support.mycompany.io but certificate validation timed out.",
-            Priority: "High",
-            Status: "Open",
-            CategoryName: "Configuration & DNS",
-            CustomerName: "Sarah Connor",
-            CustomerEmail: "sarah@cyberdyne.io",
-            AssignedAgentName: "Alex Rivera",
-            CreatedAtUtc: DateTime.UtcNow.AddHours(-2),
-            UpdatedAtUtc: DateTime.UtcNow.AddMinutes(-15),
-            MessageCount: 3
-        ),
-        new TicketDto(
-            Id: Guid.Parse("22222222-2222-2222-2222-222222222222"),
-            TicketReference: "SP-1041",
-            Title: "Billing inquiry: invoice receipt VAT id missing",
-            Description: "Need updated invoice with EU VAT ID for Q3 accounting period.",
-            Priority: "Medium",
-            Status: "InProgress",
-            CategoryName: "Billing",
-            CustomerName: "Marcus Vance",
-            CustomerEmail: "marcus@helios.tech",
-            AssignedAgentName: "Emma Watson",
-            CreatedAtUtc: DateTime.UtcNow.AddHours(-6),
-            UpdatedAtUtc: DateTime.UtcNow.AddHours(-1),
-            MessageCount: 4
-        ),
-        new TicketDto(
-            Id: Guid.Parse("33333333-3333-3333-3333-333333333333"),
-            TicketReference: "SP-1040",
-            Title: "AI Knowledge Base sync fails on large markdown docs",
-            Description: "When syncing 500+ kb documentation, the vector ingestion job returns timeout 504.",
-            Priority: "Urgent",
-            Status: "Open",
-            CategoryName: "AI & Integrations",
-            CustomerName: "David Chen",
-            CustomerEmail: "david@neuroflow.ai",
-            AssignedAgentName: null,
-            CreatedAtUtc: DateTime.UtcNow.AddHours(-12),
-            UpdatedAtUtc: null,
-            MessageCount: 1
-        ),
-        new TicketDto(
-            Id: Guid.Parse("44444444-4444-4444-4444-444444444444"),
-            TicketReference: "SP-1039",
-            Title: "How to export ticket history to CSV?",
-            Description: "Looking for an automated way to export weekly resolved tickets for reporting.",
-            Priority: "Low",
-            Status: "Resolved",
-            CategoryName: "General Support",
-            CustomerName: "Elena Rostova",
-            CustomerEmail: "elena@vanguard.co",
-            AssignedAgentName: "Alex Rivera",
-            CreatedAtUtc: DateTime.UtcNow.AddDays(-1),
-            UpdatedAtUtc: DateTime.UtcNow.AddHours(-3),
-            MessageCount: 5
-        )
-    };
+        _dbContext = dbContext;
+    }
 
     [HttpGet]
-    public ActionResult<IEnumerable<TicketDto>> GetTickets([FromQuery] string? status, [FromQuery] string? priority, [FromQuery] string? search)
+    public async Task<ActionResult<IEnumerable<TicketDto>>> GetTickets(
+        [FromQuery] string? status,
+        [FromQuery] string? priority,
+        [FromQuery] string? search,
+        [FromQuery] Guid? agentId,
+        [FromQuery] Guid? customerId)
     {
-        var query = SampleTickets.AsEnumerable();
+        var query = _dbContext.Tickets
+            .Include(t => t.Category)
+            .Include(t => t.Customer)
+            .Include(t => t.AssignedAgent)
+            .Include(t => t.Messages)
+            .AsNoTracking()
+            .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(status) && status != "All")
         {
-            query = query.Where(t => t.Status.Equals(status, StringComparison.OrdinalIgnoreCase));
+            if (Enum.TryParse<TicketStatus>(status, true, out var parsedStatus))
+            {
+                query = query.Where(t => t.Status == parsedStatus);
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(priority) && priority != "All")
         {
-            query = query.Where(t => t.Priority.Equals(priority, StringComparison.OrdinalIgnoreCase));
+            if (Enum.TryParse<TicketPriority>(priority, true, out var parsedPriority))
+            {
+                query = query.Where(t => t.Priority == parsedPriority);
+            }
+        }
+
+        if (agentId.HasValue)
+        {
+            query = query.Where(t => t.AssignedAgentId == agentId.Value);
+        }
+
+        if (customerId.HasValue)
+        {
+            query = query.Where(t => t.CustomerId == customerId.Value);
         }
 
         if (!string.IsNullOrWhiteSpace(search))
         {
+            var searchLower = search.Trim().ToLower();
             query = query.Where(t =>
-                t.Title.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                t.TicketReference.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                t.CustomerName.Contains(search, StringComparison.OrdinalIgnoreCase));
+                t.Title.ToLower().Contains(searchLower) ||
+                t.TicketReference.ToLower().Contains(searchLower) ||
+                (t.Customer != null && t.Customer.FullName.ToLower().Contains(searchLower)) ||
+                (t.Customer != null && t.Customer.Email.ToLower().Contains(searchLower)));
         }
 
-        return Ok(query.ToList());
+        var tickets = await query
+            .OrderByDescending(t => t.CreatedAtUtc)
+            .Select(t => new TicketDto(
+                t.Id,
+                t.TicketReference,
+                t.Title,
+                t.Description,
+                t.Priority.ToString(),
+                t.Status.ToString(),
+                t.Category != null ? t.Category.Name : null,
+                t.Customer != null ? t.Customer.FullName : "Anonymous Customer",
+                t.Customer != null ? t.Customer.Email : "support@customer.io",
+                t.AssignedAgent != null ? t.AssignedAgent.FullName : null,
+                t.CreatedAtUtc,
+                t.UpdatedAtUtc,
+                t.Messages.Count
+            ))
+            .ToListAsync();
+
+        return Ok(tickets);
     }
 
     [HttpGet("{id:guid}")]
-    public ActionResult<TicketDto> GetById(Guid id)
+    public async Task<ActionResult<TicketDetailDto>> GetById(Guid id)
     {
-        var ticket = SampleTickets.FirstOrDefault(t => t.Id == id);
-        if (ticket == null) return NotFound(new { message = "Ticket not found" });
-        return Ok(ticket);
+        var ticket = await _dbContext.Tickets
+            .Include(t => t.Category)
+            .Include(t => t.Customer)
+            .Include(t => t.AssignedAgent)
+            .Include(t => t.Messages)
+                .ThenInclude(m => m.Sender)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == id);
+
+        if (ticket == null)
+        {
+            return NotFound(new { message = "Ticket not found." });
+        }
+
+        var detailDto = new TicketDetailDto(
+            ticket.Id,
+            ticket.TicketReference,
+            ticket.Title,
+            ticket.Description,
+            ticket.Priority.ToString(),
+            ticket.Status.ToString(),
+            ticket.CategoryId,
+            ticket.Category?.Name,
+            ticket.CustomerId,
+            ticket.Customer?.FullName ?? "Anonymous Customer",
+            ticket.Customer?.Email ?? "customer@unknown.io",
+            ticket.AssignedAgentId,
+            ticket.AssignedAgent?.FullName,
+            ticket.CreatedAtUtc,
+            ticket.UpdatedAtUtc,
+            ticket.ResolvedAtUtc,
+            ticket.Messages
+                .OrderBy(m => m.CreatedAtUtc)
+                .Select(m => new TicketMessageDto(
+                    m.Id,
+                    m.TicketId,
+                    m.SenderId,
+                    m.Sender?.FullName ?? "Support Team",
+                    m.Sender?.Role.ToString() ?? "SupportAgent",
+                    m.Content,
+                    m.IsInternalNote,
+                    m.IsAiGenerated,
+                    m.CreatedAtUtc
+                ))
+                .ToList()
+        );
+
+        return Ok(detailDto);
     }
 
     [HttpPost]
-    public ActionResult<TicketDto> CreateTicket([FromBody] CreateTicketRequest request)
+    public async Task<ActionResult<TicketDto>> CreateTicket([FromBody] CreateTicketRequest request)
     {
-        var newTicket = new TicketDto(
-            Id: Guid.NewGuid(),
-            TicketReference: $"SP-{1040 + SampleTickets.Count + 1}",
-            Title: request.Title,
-            Description: request.Description,
-            Priority: request.Priority.ToString(),
-            Status: "Open",
-            CategoryName: request.CategoryName ?? "General Support",
-            CustomerName: request.CustomerName,
-            CustomerEmail: request.CustomerEmail,
-            AssignedAgentName: null,
-            CreatedAtUtc: DateTime.UtcNow,
-            UpdatedAtUtc: null,
-            MessageCount: 1
+        if (string.IsNullOrWhiteSpace(request.Title) || string.IsNullOrWhiteSpace(request.Description))
+        {
+            return BadRequest(new { message = "Title and description are required." });
+        }
+
+        // Determine Customer
+        User? customer = null;
+        var userIdClaim = ControllerContext?.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                          ?? ControllerContext?.HttpContext?.User?.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var userId))
+        {
+            customer = await _dbContext.Users.FindAsync(userId);
+        }
+
+        if (customer == null && !string.IsNullOrWhiteSpace(request.CustomerEmail))
+        {
+            var email = request.CustomerEmail.Trim().ToLowerInvariant();
+            customer = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email);
+            if (customer == null)
+            {
+                customer = new User
+                {
+                    Id = Guid.NewGuid(),
+                    Email = email,
+                    FullName = string.IsNullOrWhiteSpace(request.CustomerName) ? email.Split('@')[0] : request.CustomerName.Trim(),
+                    PasswordHash = "guest_account",
+                    Role = UserRole.Customer,
+                    CreatedAtUtc = DateTime.UtcNow
+                };
+                _dbContext.Users.Add(customer);
+            }
+        }
+
+        if (customer == null)
+        {
+            customer = await _dbContext.Users.FirstOrDefaultAsync(u => u.Role == UserRole.Customer)
+                       ?? await _dbContext.Users.FirstOrDefaultAsync();
+        }
+
+        if (customer == null)
+        {
+            customer = new User
+            {
+                Id = Guid.NewGuid(),
+                Email = "guest@supportpilot.io",
+                FullName = "Guest Customer",
+                Role = UserRole.Customer,
+                CreatedAtUtc = DateTime.UtcNow
+            };
+            _dbContext.Users.Add(customer);
+        }
+
+        // Determine category
+        TicketCategory? category = null;
+        if (!string.IsNullOrWhiteSpace(request.CategoryName))
+        {
+            category = await _dbContext.TicketCategories.FirstOrDefaultAsync(c => c.Name == request.CategoryName);
+        }
+
+        var ticketCount = await _dbContext.Tickets.CountAsync();
+        var reference = $"SP-{1040 + ticketCount + 1}";
+
+        var ticket = new Ticket
+        {
+            Id = Guid.NewGuid(),
+            TicketReference = reference,
+            Title = request.Title.Trim(),
+            Description = request.Description.Trim(),
+            Priority = request.Priority,
+            Status = TicketStatus.Open,
+            CategoryId = category?.Id,
+            CustomerId = customer.Id,
+            OrganizationId = customer.OrganizationId,
+            CreatedAtUtc = DateTime.UtcNow,
+            UpdatedAtUtc = DateTime.UtcNow
+        };
+
+        // Create initial message
+        var initialMessage = new TicketMessage
+        {
+            Id = Guid.NewGuid(),
+            TicketId = ticket.Id,
+            SenderId = customer.Id,
+            Content = ticket.Description,
+            IsInternalNote = false,
+            IsAiGenerated = false,
+            CreatedAtUtc = DateTime.UtcNow
+        };
+
+        _dbContext.Tickets.Add(ticket);
+        _dbContext.TicketMessages.Add(initialMessage);
+        await _dbContext.SaveChangesAsync();
+
+        var resultDto = new TicketDto(
+            ticket.Id,
+            ticket.TicketReference,
+            ticket.Title,
+            ticket.Description,
+            ticket.Priority.ToString(),
+            ticket.Status.ToString(),
+            category?.Name,
+            customer.FullName,
+            customer.Email,
+            null,
+            ticket.CreatedAtUtc,
+            ticket.UpdatedAtUtc,
+            1
         );
 
-        SampleTickets.Insert(0, newTicket);
-        return CreatedAtAction(nameof(GetById), new { id = newTicket.Id }, newTicket);
+        return CreatedAtAction(nameof(GetById), new { id = ticket.Id }, resultDto);
+    }
+
+    [HttpPost("{id:guid}/messages")]
+    public async Task<ActionResult<TicketMessageDto>> AddMessage(Guid id, [FromBody] AddTicketMessageRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Content))
+        {
+            return BadRequest(new { message = "Message content cannot be empty." });
+        }
+
+        var ticket = await _dbContext.Tickets.FindAsync(id);
+        if (ticket == null)
+        {
+            return NotFound(new { message = "Ticket not found." });
+        }
+
+        User? sender = null;
+        var userIdClaim = ControllerContext?.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                          ?? ControllerContext?.HttpContext?.User?.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var userId))
+        {
+            sender = await _dbContext.Users.FindAsync(userId);
+        }
+
+        if (sender == null)
+        {
+            // Fallback to assigned agent or customer or first agent
+            if (request.IsInternalNote)
+            {
+                sender = await _dbContext.Users.FirstOrDefaultAsync(u => u.Role == UserRole.SupportAgent || u.Role == UserRole.SupportManager);
+            }
+            else
+            {
+                sender = await _dbContext.Users.FindAsync(ticket.CustomerId)
+                         ?? await _dbContext.Users.FirstOrDefaultAsync();
+            }
+        }
+
+        var message = new TicketMessage
+        {
+            Id = Guid.NewGuid(),
+            TicketId = ticket.Id,
+            SenderId = sender?.Id ?? ticket.CustomerId,
+            Content = request.Content.Trim(),
+            IsInternalNote = request.IsInternalNote,
+            IsAiGenerated = request.IsAiGenerated,
+            CreatedAtUtc = DateTime.UtcNow
+        };
+
+        ticket.UpdatedAtUtc = DateTime.UtcNow;
+        if (ticket.Status == TicketStatus.Open && sender?.Role == UserRole.SupportAgent)
+        {
+            ticket.Status = TicketStatus.InProgress;
+        }
+
+        _dbContext.TicketMessages.Add(message);
+        await _dbContext.SaveChangesAsync();
+
+        var messageDto = new TicketMessageDto(
+            message.Id,
+            message.TicketId,
+            message.SenderId,
+            sender?.FullName ?? "Support Team",
+            sender?.Role.ToString() ?? "SupportAgent",
+            message.Content,
+            message.IsInternalNote,
+            message.IsAiGenerated,
+            message.CreatedAtUtc
+        );
+
+        return Ok(messageDto);
+    }
+
+    [HttpPatch("{id:guid}/status")]
+    public async Task<ActionResult<TicketDto>> UpdateStatus(Guid id, [FromBody] UpdateTicketStatusRequest request)
+    {
+        var ticket = await _dbContext.Tickets
+            .Include(t => t.Category)
+            .Include(t => t.Customer)
+            .Include(t => t.AssignedAgent)
+            .Include(t => t.Messages)
+            .FirstOrDefaultAsync(t => t.Id == id);
+
+        if (ticket == null)
+        {
+            return NotFound(new { message = "Ticket not found." });
+        }
+
+        ticket.Status = request.Status;
+        ticket.UpdatedAtUtc = DateTime.UtcNow;
+
+        if (request.Status == TicketStatus.Resolved || request.Status == TicketStatus.Closed)
+        {
+            ticket.ResolvedAtUtc = DateTime.UtcNow;
+        }
+
+        await _dbContext.SaveChangesAsync();
+
+        var dto = new TicketDto(
+            ticket.Id,
+            ticket.TicketReference,
+            ticket.Title,
+            ticket.Description,
+            ticket.Priority.ToString(),
+            ticket.Status.ToString(),
+            ticket.Category?.Name,
+            ticket.Customer?.FullName ?? "Customer",
+            ticket.Customer?.Email ?? "",
+            ticket.AssignedAgent?.FullName,
+            ticket.CreatedAtUtc,
+            ticket.UpdatedAtUtc,
+            ticket.Messages.Count
+        );
+
+        return Ok(dto);
+    }
+
+    [HttpPatch("{id:guid}/assign")]
+    public async Task<ActionResult<TicketDto>> AssignAgent(Guid id, [FromBody] AssignTicketRequest request)
+    {
+        var ticket = await _dbContext.Tickets
+            .Include(t => t.Category)
+            .Include(t => t.Customer)
+            .Include(t => t.AssignedAgent)
+            .Include(t => t.Messages)
+            .FirstOrDefaultAsync(t => t.Id == id);
+
+        if (ticket == null)
+        {
+            return NotFound(new { message = "Ticket not found." });
+        }
+
+        if (request.AgentId.HasValue)
+        {
+            var agent = await _dbContext.Users.FindAsync(request.AgentId.Value);
+            if (agent == null)
+            {
+                return BadRequest(new { message = "Assigned agent does not exist." });
+            }
+            ticket.AssignedAgentId = agent.Id;
+            ticket.AssignedAgent = agent;
+            if (ticket.Status == TicketStatus.Open)
+            {
+                ticket.Status = TicketStatus.InProgress;
+            }
+        }
+        else
+        {
+            ticket.AssignedAgentId = null;
+            ticket.AssignedAgent = null;
+        }
+
+        ticket.UpdatedAtUtc = DateTime.UtcNow;
+        await _dbContext.SaveChangesAsync();
+
+        var dto = new TicketDto(
+            ticket.Id,
+            ticket.TicketReference,
+            ticket.Title,
+            ticket.Description,
+            ticket.Priority.ToString(),
+            ticket.Status.ToString(),
+            ticket.Category?.Name,
+            ticket.Customer?.FullName ?? "Customer",
+            ticket.Customer?.Email ?? "",
+            ticket.AssignedAgent?.FullName,
+            ticket.CreatedAtUtc,
+            ticket.UpdatedAtUtc,
+            ticket.Messages.Count
+        );
+
+        return Ok(dto);
+    }
+
+    [HttpGet("categories")]
+    public async Task<ActionResult<IEnumerable<TicketCategory>>> GetCategories()
+    {
+        var categories = await _dbContext.TicketCategories
+            .Where(c => c.IsActive)
+            .OrderBy(c => c.Name)
+            .ToListAsync();
+
+        return Ok(categories);
     }
 }

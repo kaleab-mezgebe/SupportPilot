@@ -1,5 +1,21 @@
 export type TicketPriority = 'Low' | 'Medium' | 'High' | 'Urgent';
 export type TicketStatus = 'Open' | 'InProgress' | 'PendingCustomer' | 'Resolved' | 'Closed';
+export type UserRole = 'Customer' | 'SupportAgent' | 'SupportManager' | 'SystemAdministrator';
+
+export interface User {
+  id: string;
+  email: string;
+  fullName: string;
+  role: UserRole;
+  organizationId?: string | null;
+  organizationName?: string | null;
+  createdAtUtc: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  user: User;
+}
 
 export interface Ticket {
   id: string;
@@ -20,12 +36,21 @@ export interface Ticket {
 export interface TicketMessage {
   id: string;
   ticketId: string;
+  senderId?: string;
   senderName: string;
-  senderRole: 'Customer' | 'SupportAgent' | 'System' | 'AIAssistant';
+  senderRole: string;
   content: string;
   isInternalNote: boolean;
   isAiGenerated: boolean;
   createdAtUtc: string;
+}
+
+export interface TicketDetail extends Ticket {
+  categoryId?: string | null;
+  customerId: string;
+  assignedAgentId?: string | null;
+  resolvedAtUtc?: string | null;
+  messages: TicketMessage[];
 }
 
 export interface DashboardStats {
@@ -35,6 +60,7 @@ export interface DashboardStats {
   resolvedTickets: number;
   avgResponseTimeMinutes: number;
   customerSatisfactionRate: number;
+  recentTickets?: Ticket[];
 }
 
 export interface ApiHealthStatus {
@@ -48,9 +74,11 @@ export interface ApiHealthStatus {
 export interface KnowledgeArticle {
   id: string;
   title: string;
+  slug?: string;
   category: string;
   content: string;
   viewCount: number;
   isPublished: boolean;
-  updatedAtUtc: string;
+  createdAtUtc?: string;
+  updatedAtUtc?: string | null;
 }

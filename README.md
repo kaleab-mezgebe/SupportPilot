@@ -95,9 +95,9 @@ dotnet test
 ## 🎯 Product Delivery Plan
 
 - **Sprint 1 (Foundation)**: ✅ Solution architecture, React workspace, ASP.NET Core API, CORS & Health probes.
-- **Sprint 2 (Identity & Auth)**: 🔄 JWT token authentication, customer vs agent roles, protected route guards.
-- **Sprint 3–4 (Ticketing MVP)**: 📅 Customer submission, queue assignment, message threads, status transitions.
-- **Sprint 5 (Support Workspace)**: 📅 Filtering, pagination, agent triage panels, SLA timers.
+- **Sprint 2 (Identity & Auth)**: ✅ JWT token authentication, customer vs agent roles, protected route guards, PBKDF2 hashing.
+- **Sprint 3–4 (Ticketing MVP)**: ✅ Customer submission, queue assignment, message threads, internal notes, status transitions.
+- **Sprint 5 (Support Workspace)**: 🔄 Filtering, pagination, agent triage panels, SLA timers.
 - **Sprint 6 (Knowledge Base & AI)**: 📅 Grounded article search, generative AI answers, fallback escalation.
 - **Sprint 7 (Real-time Hub)**: 📅 SignalR live chat, real-time notifications.
 - **Sprint 8 (Hardening & Launch)**: 📅 Performance tuning, automated CI/CD, Docker deployment.
