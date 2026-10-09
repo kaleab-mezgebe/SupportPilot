@@ -1,0 +1,97 @@
+# ==========================================
+# SupportPilot — Comprehensive .gitignore
+# ==========================================
+
+# ------------------------------------------
+# Operating System Files
+# ------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+[Dd]esktop.ini
+
+# ------------------------------------------
+# .NET / C# Build & Runtime Artifacts
+# ------------------------------------------
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+[Tt]est[Rr]esult*/
+[Tt]est[Rr]esults/
+[Pp]ublish/
+publish/
+
+# Visual Studio / Rider / OmniSharp / VS Code
+.vs/
+.idea/
+.ionide/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+*.launchSettings.json
+*.pidb
+*.booproj
+*.svclog
+
+# .NET Core / Entity Framework Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+*.Generated.cs
+
+# User-specific & local appsettings
+appsettings.Development.local.json
+appsettings.Production.json
+appsettings.Local.json
+*.local.json
+
+# ------------------------------------------
+# Node.js / React / Vite Frontend
+# ------------------------------------------
+node_modules/
+jspm_packages/
+dist/
+dist-ssr/
+build/
+.next/
+out/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Environment & Secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+!*.env.example
+*.pfx
+*.p12
+*.key
+*.pem
+
+# Editor artifacts
+*.swp
+*.swo
+*~
+*.bak
+
+# ------------------------------------------
+# Docker & Local Data Volumes
+# ------------------------------------------
+postgres_data/
+.docker/
+docker-compose.override.yml

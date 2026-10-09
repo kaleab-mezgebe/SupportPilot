@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: supportpilot-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: supportpilot
+      POSTGRES_PASSWORD: supportpilot_secret
+      POSTGRES_DB: supportpilot_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/SupportPilot.Api/Dockerfile
+    container_name: supportpilot-backend
+    restart: unless-stopped
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=supportpilot_db;Username=supportpilot;Password=supportpilot_secret
+    ports:
+      - "5000:8080"
+    depends_on:
+      - postgres
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: supportpilot-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
