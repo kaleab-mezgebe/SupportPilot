@@ -8,12 +8,16 @@ using Microsoft.OpenApi.Models;
 using SupportPilot.Api.Data;
 using SupportPilot.Api.Hubs;
 using SupportPilot.Api.Services;
+using SupportPilot.Api.Services.Email;
+using SupportPilot.Api.Services.Integrations;
+using SupportPilot.Api.Services.Llm;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddHttpClient();
 
 // Dependency Injection
 builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
@@ -21,6 +25,14 @@ builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<ISemanticSearchService, SemanticSearchService>();
 builder.Services.AddScoped<IGroundedRagService, GroundedRagService>();
 builder.Services.AddSingleton<IPresenceTracker, PresenceTracker>();
+
+// Sprint 9: Multi-LLM, Email Ingestion & Slack Integrations
+builder.Services.AddSingleton<LocalDenseLlmProvider>();
+builder.Services.AddScoped<OpenAiLlmProvider>();
+builder.Services.AddScoped<GeminiLlmProvider>();
+builder.Services.AddScoped<ILlmProvider, CompositeLlmProvider>();
+builder.Services.AddScoped<IEmailNotificationService, EmailNotificationService>();
+builder.Services.AddScoped<ISlackIntegrationService, SlackIntegrationService>();
 
 // Add SignalR (Sprint 7)
 builder.Services.AddSignalR();

@@ -227,4 +227,74 @@ public class AuthAndTicketsIntegrationTests : IClassFixture<CustomWebApplication
         Assert.NotEmpty(ragAnswer.Citations);
         Assert.True(ragAnswer.ConfidenceScore > 0);
     }
+
+    [Fact]
+    public async Task InboundEmailWebhook_CreatesTicketFromEmail()
+    {
+        // Arrange
+        var webhookPayload = new InboundEmailWebhookDto(
+            From: "Integration Tester <tester@acme.test>",
+            To: "support@supportpilot.io",
+            Subject: "Urgent: Payment webhook failure in production",
+            BodyText: "Payment gateway received 500 internal server error."
+        );
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/webhooks/inbound-email", webhookPayload);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var result = await response.Content.ReadFromJsonAsync<InboundEmailResultDto>(JsonOptions);
+        Assert.NotNull(result);
+        Assert.True(result.Success);
+        Assert.StartsWith("TCK-EML-", result.TicketReference);
+    }
+
+    [Fact]
+    public async Task SubmitCsat_ResolvedTicket_ReturnsSuccessAndPersistsRating()
+    {
+        // Arrange
+        var customerToken = await AuthenticateAsync("customer@acme.test", "Password123!");
+        var ticketId = Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff");
+
+        // First ensure ticket is marked resolved
+        var agentToken = await AuthenticateAsync("agent@acme.test", "Password123!");
+        using var resolveReq = new HttpRequestMessage(HttpMethod.Patch, $"/api/tickets/{ticketId}/status");
+        resolveReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", agentToken);
+        resolveReq.Content = JsonContent.Create(new UpdateTicketStatusRequest(TicketStatus.Resolved));
+        var resolveRes = await _client.SendAsync(resolveReq);
+        Assert.Equal(HttpStatusCode.OK, resolveRes.StatusCode);
+
+        // Act: Submit 5-star CSAT survey
+        using var csatReq = new HttpRequestMessage(HttpMethod.Post, $"/api/tickets/{ticketId}/csat");
+        csatReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", customerToken);
+        csatReq.Content = JsonContent.Create(new SubmitCsatRequest(
+            Rating: 5,
+            FeedbackComment: "Speedy and effective resolution!"
+        ));
+        var csatRes = await _client.SendAsync(csatReq);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, csatRes.StatusCode);
+        var surveyDto = await csatRes.Content.ReadFromJsonAsync<CsatSurveyDto>(JsonOptions);
+        Assert.NotNull(surveyDto);
+        Assert.Equal(5, surveyDto.Rating);
+        Assert.Equal("Speedy and effective resolution!", surveyDto.FeedbackComment);
+    }
+
+    [Fact]
+    public async Task IntegrationStatus_ReturnsConfiguration()
+    {
+        // Act
+        var response = await _client.GetAsync("/api/integrations/status");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var status = await response.Content.ReadFromJsonAsync<IntegrationStatusDto>(JsonOptions);
+        Assert.NotNull(status);
+        Assert.True(status.EmailInboundActive);
+        Assert.False(string.IsNullOrWhiteSpace(status.ActiveLlmProvider));
+    }
 }

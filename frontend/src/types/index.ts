@@ -123,3 +123,38 @@ export interface CopilotSuggestion {
   citations: string[];
 }
 
+// Sprint 9: CSAT & Integrations
+export interface CsatSurvey {
+  id: string;
+  ticketId: string;
+  ticketReference: string;
+  customerId: string;
+  customerName: string;
+  rating: number; // 1-5
+  feedbackComment?: string | null;
+  submittedAtUtc: string;
+}
+
+export interface CsatMetrics {
+  averageRating: number;
+  totalResponses: number;
+  satisfactionPercentage: number;
+  ratingDistribution: Record<string, number>;
+  recentFeedback: CsatSurvey[];
+}
+
+export interface IntegrationStatus {
+  slackConfigured: boolean;
+  emailInboundActive: boolean;
+  activeLlmProvider: string;
+  timestampUtc: string;
+}
+
+export interface InboundEmailResult {
+  success: boolean;
+  action: string;
+  ticketReference: string;
+  ticketId: string;
+  message: string;
+}
+

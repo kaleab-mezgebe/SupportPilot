@@ -92,6 +92,9 @@ public class Ticket
     public bool IsSlaBreached { get; set; } = false;
 
     public ICollection<TicketMessage> Messages { get; set; } = new List<TicketMessage>();
+
+    // CSAT Survey (Sprint 9)
+    public CsatSurvey? CsatSurvey { get; set; }
 }
 
 public class TicketMessage
@@ -147,4 +150,18 @@ public class AuditLog
     public string Details { get; set; } = string.Empty;
     public string IpAddress { get; set; } = string.Empty;
     public DateTime TimestampUtc { get; set; } = DateTime.UtcNow;
+}
+
+public class CsatSurvey
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid TicketId { get; set; }
+    public Ticket? Ticket { get; set; }
+
+    public Guid CustomerId { get; set; }
+    public User? Customer { get; set; }
+
+    public int Rating { get; set; } // 1 to 5 stars
+    public string? FeedbackComment { get; set; }
+    public DateTime SubmittedAtUtc { get; set; } = DateTime.UtcNow;
 }

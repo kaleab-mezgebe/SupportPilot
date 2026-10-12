@@ -101,3 +101,4 @@ dotnet test
 - **Sprint 6 (Knowledge Base & AI)**: ✅ Grounded article search, vector embeddings, generative AI answers, fallback escalation.
 - **Sprint 7 (Real-time Hub)**: ✅ SignalR live chat, real-time notifications, agent presence, typing indicators.
 - **Sprint 8 (Hardening & Launch)**: ✅ Performance tuning, automated CI/CD, Docker deployment, integration tests, backup & recovery runbooks.
+- **Sprint 9 (Enterprise Extensions)**: ✅ Multi-LLM provider dispatch (OpenAI, Gemini & local fallback), inbound email ingestion via webhooks, Slack Block Kit alerts, and interactive CSAT ratings.

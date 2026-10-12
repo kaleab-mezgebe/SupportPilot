@@ -3,17 +3,24 @@ using SupportPilot.Api.Data;
 using SupportPilot.Api.DTOs;
 using SupportPilot.Api.Entities;
 
+using SupportPilot.Api.Services.Llm;
+
 namespace SupportPilot.Api.Services;
 
 public class GroundedRagService : IGroundedRagService
 {
     private readonly ISemanticSearchService _semanticSearchService;
     private readonly AppDbContext _dbContext;
+    private readonly ILlmProvider _llmProvider;
 
-    public GroundedRagService(ISemanticSearchService semanticSearchService, AppDbContext dbContext)
+    public GroundedRagService(
+        ISemanticSearchService semanticSearchService, 
+        AppDbContext dbContext,
+        ILlmProvider? llmProvider = null)
     {
         _semanticSearchService = semanticSearchService;
         _dbContext = dbContext;
+        _llmProvider = llmProvider ?? new LocalDenseLlmProvider();
     }
 
     public async Task<RagAnswerDto> GenerateAnswerAsync(string query, double threshold = 0.55)
@@ -64,10 +71,14 @@ public class GroundedRagService : IGroundedRagService
             Excerpt: ExtractRelevantExcerpt(m.Article.Content, query)
         )).ToList();
 
-        // Synthesize grounded response directly from verified article content
-        var synthesizedAnswer = $"Based on SupportPilot approved documentation in [{topArticle.Title}]:\n\n" +
-            $"{topArticle.Content.Trim()}\n\n" +
-            $"References: {string.Join(", ", citations.Select(c => $"[{c.Title}] (Confidence: {c.RelevanceScore:P0})"))}";
+        // Synthesize grounded response using active LLM provider (external OpenAI/Gemini or local dense fallback)
+        var citationList = citations.Select(c => $"[{c.Title}] (Confidence: {c.RelevanceScore:P0})").ToList();
+        var synthesizedAnswer = await _llmProvider.GenerateGroundedAnswerAsync(
+            query,
+            topArticle.Title,
+            topArticle.Content,
+            citationList
+        );
 
         return new RagAnswerDto(
             Query: query,

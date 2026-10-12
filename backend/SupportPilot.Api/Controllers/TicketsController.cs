@@ -597,6 +597,64 @@ public class TicketsController : ControllerBase
         ));
     }
 
+    [HttpPost("{id:guid}/csat")]
+    public async Task<ActionResult<CsatSurveyDto>> SubmitCsat(Guid id, [FromBody] SubmitCsatRequest request)
+    {
+        if (request.Rating < 1 || request.Rating > 5)
+        {
+            return BadRequest(new { message = "Rating must be between 1 and 5 stars." });
+        }
+
+        var ticket = await _dbContext.Tickets
+            .Include(t => t.Customer)
+            .Include(t => t.CsatSurvey)
+            .FirstOrDefaultAsync(t => t.Id == id);
+
+        if (ticket == null)
+        {
+            return NotFound(new { message = "Ticket not found." });
+        }
+
+        if (ticket.Status != TicketStatus.Resolved && ticket.Status != TicketStatus.Closed)
+        {
+            return BadRequest(new { message = "CSAT surveys can only be submitted for resolved or closed tickets." });
+        }
+
+        var survey = ticket.CsatSurvey;
+        if (survey == null)
+        {
+            survey = new CsatSurvey
+            {
+                Id = Guid.NewGuid(),
+                TicketId = ticket.Id,
+                CustomerId = ticket.CustomerId,
+                Rating = request.Rating,
+                FeedbackComment = request.FeedbackComment,
+                SubmittedAtUtc = DateTime.UtcNow
+            };
+            _dbContext.CsatSurveys.Add(survey);
+        }
+        else
+        {
+            survey.Rating = request.Rating;
+            survey.FeedbackComment = request.FeedbackComment;
+            survey.SubmittedAtUtc = DateTime.UtcNow;
+        }
+
+        await _dbContext.SaveChangesAsync();
+
+        return Ok(new CsatSurveyDto(
+            survey.Id,
+            ticket.Id,
+            ticket.TicketReference,
+            ticket.CustomerId,
+            ticket.Customer?.FullName ?? "Customer",
+            survey.Rating,
+            survey.FeedbackComment,
+            survey.SubmittedAtUtc
+        ));
+    }
+
     [HttpGet("categories")]
     public async Task<ActionResult<IEnumerable<TicketCategory>>> GetCategories()
     {

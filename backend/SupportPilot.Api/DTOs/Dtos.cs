@@ -224,3 +224,60 @@ public record CopilotSuggestionDto(
     double ConfidenceScore,
     List<string> Citations
 );
+
+// --- Sprint 9: Post-MVP Enhancements ---
+// CSAT Surveys
+public record SubmitCsatRequest(
+    int Rating,
+    string? FeedbackComment = null
+);
+
+public record CsatSurveyDto(
+    Guid Id,
+    Guid TicketId,
+    string TicketReference,
+    Guid CustomerId,
+    string CustomerName,
+    int Rating,
+    string? FeedbackComment,
+    DateTime SubmittedAtUtc
+);
+
+public record CsatMetricsDto(
+    double AverageRating,
+    int TotalResponses,
+    double SatisfactionPercentage,
+    Dictionary<string, int> RatingDistribution,
+    List<CsatSurveyDto> RecentFeedback
+);
+
+// Inbound Email Webhook
+public record InboundEmailWebhookDto(
+    string From,
+    string To,
+    string Subject,
+    string BodyText,
+    string? BodyHtml = null,
+    string? MessageId = null
+);
+
+public record InboundEmailResultDto(
+    bool Success,
+    string Action,
+    string TicketReference,
+    Guid TicketId,
+    string Message
+);
+
+// Multi-Channel Slack & Teams
+public record SlackWebhookTestRequest(
+    string WebhookUrl,
+    string? Message = null
+);
+
+public record IntegrationStatusDto(
+    bool SlackConfigured,
+    bool EmailInboundActive,
+    string ActiveLlmProvider,
+    DateTime TimestampUtc
+);

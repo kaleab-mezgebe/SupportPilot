@@ -10,7 +10,8 @@ import {
   CheckSquare,
   Square,
   Layers,
-  Check
+  Check,
+  Star
 } from 'lucide-react';
 import { ApiService } from '../services/api';
 import { RealtimeService } from '../services/signalr';
@@ -53,6 +54,11 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
   const [isUpdatingPriority, setIsUpdatingPriority] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
 
+  // CSAT Survey States (Sprint 9)
+  const [csatRating, setCsatRating] = useState<number>(0);
+  const [csatSubmitted, setCsatSubmitted] = useState<boolean>(false);
+  const [csatComment, setCsatComment] = useState<string>('');
+
   const loadTickets = async () => {
     const list = await ApiService.getTickets({
       status: statusFilter,
@@ -82,6 +88,10 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
 
   useEffect(() => {
     if (selectedTicketId) {
+      setCsatSubmitted(false);
+      setCsatRating(0);
+      setCsatComment('');
+
       ApiService.getTicketDetail(selectedTicketId).then(detail => {
         setTicketDetail(detail);
       });
@@ -268,6 +278,16 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
       await loadTickets();
     } finally {
       setIsAssigning(false);
+    }
+  };
+
+  const handleCsatRating = async (ticketId: string, rating: number) => {
+    setCsatRating(rating);
+    try {
+      await ApiService.submitCsat(ticketId, rating, csatComment);
+      setCsatSubmitted(true);
+    } catch {
+      setCsatSubmitted(true);
     }
   };
 
@@ -782,6 +802,52 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
                   </span>
                 </div>
               </div>
+
+              {/* CSAT Survey Banner (Sprint 9) */}
+              {(ticketDetail.status === 'Resolved' || ticketDetail.status === 'Closed') && (
+                <div style={{ marginTop: '12px', padding: '12px 16px', background: 'rgba(234, 179, 8, 0.08)', border: '1px solid rgba(234, 179, 8, 0.25)', borderRadius: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontSize: '0.825rem', fontWeight: 700, color: '#facc15', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Star size={14} fill="#facc15" /> How satisfied are you with this resolution?
+                      </div>
+                      <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                        Rate your experience to help us continuously train our support engine.
+                      </p>
+                    </div>
+
+                    {csatSubmitted ? (
+                      <span style={{ fontSize: '0.75rem', color: 'var(--accent-success)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Check size={14} /> Rated ({csatRating} ★)
+                      </span>
+                    ) : (
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        {[1, 2, 3, 4, 5].map(star => (
+                          <button
+                            key={star}
+                            onClick={() => handleCsatRating(ticketDetail.id, star)}
+                            style={{
+                              background: csatRating >= star ? 'rgba(234, 179, 8, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+                              border: csatRating >= star ? '1px solid #facc15' : '1px solid var(--border-subtle)',
+                              borderRadius: '6px',
+                              padding: '4px 7px',
+                              color: csatRating >= star ? '#facc15' : 'var(--text-dim)',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '2px',
+                              fontSize: '0.72rem',
+                              fontWeight: 700
+                            }}
+                          >
+                            {star} <Star size={11} fill={csatRating >= star ? '#facc15' : 'none'} />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Conversation Thread */}

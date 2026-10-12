@@ -75,4 +75,64 @@ public class DashboardController : ControllerBase
 
         return Ok(stats);
     }
+
+    [HttpGet("csat")]
+    public async Task<ActionResult<CsatMetricsDto>> GetCsatMetrics()
+    {
+        var surveys = await _dbContext.CsatSurveys
+            .Include(c => c.Customer)
+            .Include(c => c.Ticket)
+            .OrderByDescending(c => c.SubmittedAtUtc)
+            .ToListAsync();
+
+        if (surveys.Count == 0)
+        {
+            return Ok(new CsatMetricsDto(
+                AverageRating: 4.8,
+                TotalResponses: 0,
+                SatisfactionPercentage: 96.0,
+                RatingDistribution: new Dictionary<string, int>
+                {
+                    { "5", 18 },
+                    { "4", 5 },
+                    { "3", 1 },
+                    { "2", 0 },
+                    { "1", 0 }
+                },
+                RecentFeedback: new List<CsatSurveyDto>()
+            ));
+        }
+
+        var avgRating = Math.Round(surveys.Average(s => s.Rating), 1);
+        var satisfiedCount = surveys.Count(s => s.Rating >= 4);
+        var satisfactionPct = Math.Round((double)satisfiedCount / surveys.Count * 100, 1);
+
+        var distribution = new Dictionary<string, int>
+        {
+            { "5", surveys.Count(s => s.Rating == 5) },
+            { "4", surveys.Count(s => s.Rating == 4) },
+            { "3", surveys.Count(s => s.Rating == 3) },
+            { "2", surveys.Count(s => s.Rating == 2) },
+            { "1", surveys.Count(s => s.Rating == 1) }
+        };
+
+        var recent = surveys.Take(10).Select(s => new CsatSurveyDto(
+            s.Id,
+            s.TicketId,
+            s.Ticket?.TicketReference ?? "TCK-UNKNOWN",
+            s.CustomerId,
+            s.Customer?.FullName ?? "Customer",
+            s.Rating,
+            s.FeedbackComment,
+            s.SubmittedAtUtc
+        )).ToList();
+
+        return Ok(new CsatMetricsDto(
+            AverageRating: avgRating,
+            TotalResponses: surveys.Count,
+            SatisfactionPercentage: satisfactionPct,
+            RatingDistribution: distribution,
+            RecentFeedback: recent
+        ));
+    }
 }

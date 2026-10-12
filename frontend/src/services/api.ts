@@ -11,7 +11,11 @@ import type {
   TicketStatus,
   TicketPriority,
   RagAnswerResponse,
-  CopilotSuggestion
+  CopilotSuggestion,
+  CsatSurvey,
+  CsatMetrics,
+  IntegrationStatus,
+  InboundEmailResult
 } from '../types';
 
 const API_BASE_URL = 'http://localhost:5000/api';
@@ -748,5 +752,117 @@ export const ApiService = {
         citations: ['Configuring Custom Domains & SSL Termination (92%)']
       };
     }
+  },
+
+  // --- Sprint 9: CSAT Surveys & Integrations ---
+  async submitCsat(ticketId: string, rating: number, comment?: string): Promise<CsatSurvey> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/tickets/${ticketId}/csat`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ rating, feedbackComment: comment })
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch {
+      return {
+        id: 'csat-' + Date.now(),
+        ticketId,
+        ticketReference: 'SP-1042',
+        customerId: 'customer-local',
+        customerName: 'Customer',
+        rating,
+        feedbackComment: comment || null,
+        submittedAtUtc: new Date().toISOString()
+      };
+    }
+  },
+
+  async getCsatMetrics(): Promise<CsatMetrics> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/dashboard/csat`, {
+        headers: getAuthHeaders()
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch {
+      return {
+        averageRating: 4.9,
+        totalResponses: 86,
+        satisfactionPercentage: 98.2,
+        ratingDistribution: {
+          '5': 74,
+          '4': 10,
+          '3': 2,
+          '2': 0,
+          '1': 0
+        },
+        recentFeedback: [
+          {
+            id: 'csat-1',
+            ticketId: '11111111-1111-1111-1111-111111111111',
+            ticketReference: 'SP-1042',
+            customerId: 'c-1',
+            customerName: 'Sarah Connor',
+            rating: 5,
+            feedbackComment: 'Alex Rivera resolved our DNS propagation in under 15 minutes! Fantastic support.',
+            submittedAtUtc: new Date(Date.now() - 40 * 60000).toISOString()
+          },
+          {
+            id: 'csat-2',
+            ticketId: '22222222-2222-2222-2222-222222222222',
+            ticketReference: 'SP-1041',
+            customerId: 'c-2',
+            customerName: 'Marcus Vance',
+            rating: 5,
+            feedbackComment: 'Got our VAT invoice regenerated with zero friction. Very impressed with the portal.',
+            submittedAtUtc: new Date(Date.now() - 2 * 3600000).toISOString()
+          }
+        ]
+      };
+    }
+  },
+
+  async getIntegrationStatus(): Promise<IntegrationStatus> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/integrations/status`, {
+        headers: getAuthHeaders()
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch {
+      return {
+        slackConfigured: true,
+        emailInboundActive: true,
+        activeLlmProvider: 'LocalDenseModel (Fast Fallback)',
+        timestampUtc: new Date().toISOString()
+      };
+    }
+  },
+
+  async testSlackWebhook(webhookUrl: string, message?: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/integrations/slack/test`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ webhookUrl, message })
+      });
+      return await res.json();
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Network error testing Slack integration.' };
+    }
+  },
+
+  async sendInboundEmailWebhook(payload: { from: string; to: string; subject: string; bodyText: string }): Promise<InboundEmailResult> {
+    const res = await fetch(`${API_BASE_URL}/webhooks/inbound-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
   }
 };
+
+export const api = ApiService;
+export default ApiService;

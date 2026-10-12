@@ -16,6 +16,7 @@ public class AppDbContext : DbContext
     public DbSet<TicketMessage> TicketMessages => Set<TicketMessage>();
     public DbSet<KnowledgeArticle> KnowledgeArticles => Set<KnowledgeArticle>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<CsatSurvey> CsatSurveys => Set<CsatSurvey>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -42,6 +43,18 @@ public class AppDbContext : DbContext
             .WithMany(t => t.Messages)
             .HasForeignKey(m => m.TicketId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<CsatSurvey>()
+            .HasOne(c => c.Ticket)
+            .WithOne(t => t.CsatSurvey)
+            .HasForeignKey<CsatSurvey>(c => c.TicketId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<CsatSurvey>()
+            .HasOne(c => c.Customer)
+            .WithMany()
+            .HasForeignKey(c => c.CustomerId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<User>()
             .HasIndex(u => u.Email)
