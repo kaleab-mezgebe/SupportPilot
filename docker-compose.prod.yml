@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: supportpilot-postgres-prod
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-supportpilot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-supportpilot_prod_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-supportpilot_prod_db}
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    networks:
+      - supportpilot-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-supportpilot} -d ${POSTGRES_DB:-supportpilot_prod_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2048M
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/SupportPilot.Api/Dockerfile
+    container_name: supportpilot-backend-prod
+    restart: always
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=${POSTGRES_DB:-supportpilot_prod_db};Username=${POSTGRES_USER:-supportpilot};Password=${POSTGRES_PASSWORD:-supportpilot_prod_secret}
+      - Jwt__Key=${JWT_SECRET_KEY:-SupportPilot_Super_Secret_Production_Key_2026_Minimum_32_Chars_Length!}
+      - Jwt__Issuer=SupportPilot.Api
+      - Jwt__Audience=SupportPilot.Client
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - supportpilot-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1024M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: supportpilot-frontend-prod
+    restart: always
+    ports:
+      - "${PORT:-80}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - supportpilot-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+
+volumes:
+  postgres_data_prod:
+    name: supportpilot_postgres_data_prod
+
+networks:
+  supportpilot-network:
+    name: supportpilot-prod-network
+    driver: bridge

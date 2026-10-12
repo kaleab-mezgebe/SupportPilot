@@ -1,0 +1,66 @@
+stages:
+  - lint
+  - test
+  - build
+  - package
+
+variables:
+  OBJECTS_DIRECTORY: '$CI_PROJECT_DIR/.dotnet'
+  NUGET_PACKAGES_DIRECTORY: '$CI_PROJECT_DIR/.nuget'
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+  NODE_ENV: 'production'
+
+# Cache dependencies across jobs
+cache:
+  key: "$CI_COMMIT_REF_SLUG"
+  paths:
+    - .nuget/
+    - frontend/node_modules/
+
+# --- Backend Stage ---
+backend:test:
+  stage: test
+  image: mcr.microsoft.com/dotnet/sdk:8.0
+  before_script:
+    - dotnet --info
+  script:
+    - dotnet restore SupportPilot.sln
+    - dotnet build SupportPilot.sln --configuration Release --no-restore
+    - dotnet test SupportPilot.sln --configuration Release --no-build --verbosity normal --collect:"XPlat Code Coverage"
+  artifacts:
+    when: always
+    reports:
+      junit:
+        - "**/TestResults/*.xml"
+    paths:
+      - "**/TestResults/"
+    expire_in: 7 days
+
+# --- Frontend Stage ---
+frontend:build:
+  stage: build
+  image: node:20-alpine
+  before_script:
+    - cd frontend
+    - npm ci || npm install
+  script:
+    - npm run build
+  artifacts:
+    paths:
+      - frontend/dist/
+    expire_in: 7 days
+
+# --- Docker Compose Validation ---
+docker:validate:
+  stage: package
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+  script:
+    - docker compose config
+    - docker compose -f docker-compose.prod.yml config
+  only:
+    - main
+    - merge_requests

@@ -1,5 +1,7 @@
 using System.Text;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -22,6 +24,22 @@ builder.Services.AddSingleton<IPresenceTracker, PresenceTracker>();
 
 // Add SignalR (Sprint 7)
 builder.Services.AddSignalR();
+
+// Health Checks (Sprint 8)
+builder.Services.AddHealthChecks();
+
+// Rate Limiting (Sprint 8 Production Hardening)
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddFixedWindowLimiter("fixed", limiterOptions =>
+    {
+        limiterOptions.PermitLimit = 120;
+        limiterOptions.Window = TimeSpan.FromMinutes(1);
+        limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        limiterOptions.QueueLimit = 10;
+    });
+});
 
 // Configure JWT Bearer Authentication
 var jwtSecretKey = builder.Configuration["Jwt:Key"] ?? "SupportPilot_Super_Secret_Key_For_Jwt_Auth_2026_Minimum_32_Bytes_Long!";
@@ -151,12 +169,40 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+// Security Headers (Sprint 8 Production Hardening)
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Append("X-Frame-Options", "DENY");
+    context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
+    context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+    context.Response.Headers.Append("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    await next();
+});
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+}
+
 app.UseCors("AllowFrontend");
 
 app.UseHttpsRedirection();
 
+app.UseRateLimiter();
+
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Health Check Endpoints
+app.MapHealthChecks("/health");
+app.MapGet("/api/health", () => Results.Ok(new 
+{ 
+    status = "Healthy", 
+    timestamp = DateTime.UtcNow, 
+    service = "SupportPilot.Api",
+    version = "1.0.0" 
+}));
 
 app.MapControllers();
 app.MapHub<SupportChatHub>("/hubs/chat");
