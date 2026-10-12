@@ -21,7 +21,7 @@ import type {
 
 const API_BASE_URL = typeof window !== 'undefined' && window.location.port === '5173'
   ? '/api'
-  : 'http://localhost:5000/api';
+  : 'http://localhost:5005/api';
 
 const getAuthHeaders = (customToken?: string): HeadersInit => {
   const token = customToken || (typeof localStorage !== 'undefined' ? localStorage.getItem('supportpilot_token') : null);

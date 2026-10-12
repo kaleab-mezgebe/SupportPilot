@@ -149,7 +149,8 @@ builder.Services.AddCors(options =>
                 "http://localhost:3000",
                 "http://localhost:5173",
                 "http://127.0.0.1:5173",
-                "http://localhost:5000"
+                "http://localhost:5000",
+                "http://localhost:5005"
             )
             .AllowAnyHeader()
             .AllowAnyMethod()
@@ -181,15 +182,12 @@ catch (Exception ex)
 }
 
 // Configure the HTTP request pipeline
-if (app.Environment.IsDevelopment())
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "SupportPilot API v1");
-        c.RoutePrefix = "swagger";
-    });
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "SupportPilot API v1");
+    c.RoutePrefix = "swagger";
+});
 
 // Security Headers (Sprint 8 Production Hardening)
 app.Use(async (context, next) =>

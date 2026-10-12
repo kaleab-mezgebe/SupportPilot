@@ -41,8 +41,12 @@ class SignalRService {
 
   private initConnection() {
     try {
+      const hubUrl = typeof window !== 'undefined' && window.location.port === '5173'
+        ? '/hubs/chat'
+        : 'http://localhost:5005/hubs/chat';
+
       this.hubConnection = new signalR.HubConnectionBuilder()
-        .withUrl('http://localhost:5000/hubs/chat', {
+        .withUrl(hubUrl, {
           accessTokenFactory: () => localStorage.getItem('supportpilot_token') || '',
           skipNegotiation: false,
           transport: signalR.HttpTransportType.WebSockets | signalR.HttpTransportType.LongPolling
