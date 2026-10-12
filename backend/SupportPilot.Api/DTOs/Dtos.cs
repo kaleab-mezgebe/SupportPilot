@@ -64,7 +64,11 @@ public record TicketDto(
     string? AssignedAgentName,
     DateTime CreatedAtUtc,
     DateTime? UpdatedAtUtc,
-    int MessageCount
+    int MessageCount,
+    DateTime? FirstResponseDueAtUtc = null,
+    DateTime? ResolutionDueAtUtc = null,
+    DateTime? FirstResponseAtUtc = null,
+    bool IsSlaBreached = false
 );
 
 public record TicketDetailDto(
@@ -84,7 +88,11 @@ public record TicketDetailDto(
     DateTime CreatedAtUtc,
     DateTime? UpdatedAtUtc,
     DateTime? ResolvedAtUtc,
-    List<TicketMessageDto> Messages
+    List<TicketMessageDto> Messages,
+    DateTime? FirstResponseDueAtUtc = null,
+    DateTime? ResolutionDueAtUtc = null,
+    DateTime? FirstResponseAtUtc = null,
+    bool IsSlaBreached = false
 );
 
 public record TicketMessageDto(
@@ -118,8 +126,42 @@ public record UpdateTicketStatusRequest(
     TicketStatus Status
 );
 
+public record UpdateTicketPriorityRequest(
+    TicketPriority Priority
+);
+
 public record AssignTicketRequest(
     Guid? AgentId
+);
+
+// --- Bulk Triage DTOs (Sprint 5) ---
+public record BulkUpdateStatusRequest(
+    List<Guid> TicketIds,
+    TicketStatus Status
+);
+
+public record BulkAssignRequest(
+    List<Guid> TicketIds,
+    Guid? AgentId
+);
+
+public record BulkUpdatePriorityRequest(
+    List<Guid> TicketIds,
+    TicketPriority Priority
+);
+
+public record BulkOperationResultDto(
+    int UpdatedCount,
+    List<Guid> AffectedTicketIds,
+    string Message
+);
+
+public record PagedResultDto<T>(
+    List<T> Items,
+    int TotalCount,
+    int Page,
+    int PageSize,
+    int TotalPages
 );
 
 // --- Knowledge Base DTOs ---

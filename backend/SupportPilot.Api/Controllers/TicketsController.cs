@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using SupportPilot.Api.Data;
 using SupportPilot.Api.DTOs;
 using SupportPilot.Api.Entities;
+using SupportPilot.Api.Services;
 
 namespace SupportPilot.Api.Controllers;
 
@@ -18,14 +19,32 @@ public class TicketsController : ControllerBase
         _dbContext = dbContext;
     }
 
+    private (Guid? UserId, UserRole? Role, Guid? OrgId) GetCurrentUserContext()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                          ?? User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+        var roleClaim = User.FindFirst(ClaimTypes.Role)?.Value;
+        var orgClaim = User.FindFirst("organization_id")?.Value;
+
+        Guid? userId = Guid.TryParse(userIdClaim, out var uid) ? uid : null;
+        UserRole? role = Enum.TryParse<UserRole>(roleClaim, true, out var r) ? r : null;
+        Guid? orgId = Guid.TryParse(orgClaim, out var oid) ? oid : null;
+
+        return (userId, role, orgId);
+    }
+
     [HttpGet]
     public async Task<ActionResult<IEnumerable<TicketDto>>> GetTickets(
         [FromQuery] string? status,
         [FromQuery] string? priority,
         [FromQuery] string? search,
+        [FromQuery] string? queue,
+        [FromQuery] string? sortBy,
         [FromQuery] Guid? agentId,
         [FromQuery] Guid? customerId)
     {
+        var (currentUserId, currentRole, currentOrgId) = GetCurrentUserContext();
+
         var query = _dbContext.Tickets
             .Include(t => t.Category)
             .Include(t => t.Customer)
@@ -34,6 +53,49 @@ public class TicketsController : ControllerBase
             .AsNoTracking()
             .AsQueryable();
 
+        // 1. Multi-Tenancy & Role-based scoping
+        if (currentRole == UserRole.Customer && currentUserId.HasValue)
+        {
+            query = query.Where(t => t.CustomerId == currentUserId.Value);
+        }
+        else if (currentOrgId.HasValue)
+        {
+            query = query.Where(t => t.OrganizationId == currentOrgId.Value || t.OrganizationId == null);
+        }
+
+        // 2. Queue Presets (Sprint 5)
+        var now = DateTime.UtcNow;
+        if (!string.IsNullOrWhiteSpace(queue))
+        {
+            switch (queue.ToLowerInvariant())
+            {
+                case "assigned_to_me":
+                    if (currentUserId.HasValue)
+                    {
+                        query = query.Where(t => t.AssignedAgentId == currentUserId.Value);
+                    }
+                    break;
+                case "unassigned":
+                    query = query.Where(t => t.AssignedAgentId == null && t.Status != TicketStatus.Resolved && t.Status != TicketStatus.Closed);
+                    break;
+                case "sla_at_risk":
+                    // Due in < 2 hours or already breached
+                    var riskHorizon = now.AddHours(2);
+                    query = query.Where(t => t.Status != TicketStatus.Resolved && t.Status != TicketStatus.Closed &&
+                        (t.IsSlaBreached || 
+                         (t.ResolutionDueAtUtc != null && t.ResolutionDueAtUtc <= riskHorizon) ||
+                         (t.FirstResponseAtUtc == null && t.FirstResponseDueAtUtc != null && t.FirstResponseDueAtUtc <= riskHorizon)));
+                    break;
+                case "urgent":
+                    query = query.Where(t => t.Priority == TicketPriority.Urgent && t.Status != TicketStatus.Resolved && t.Status != TicketStatus.Closed);
+                    break;
+                case "resolved":
+                    query = query.Where(t => t.Status == TicketStatus.Resolved || t.Status == TicketStatus.Closed);
+                    break;
+            }
+        }
+
+        // 3. Status Filter
         if (!string.IsNullOrWhiteSpace(status) && status != "All")
         {
             if (Enum.TryParse<TicketStatus>(status, true, out var parsedStatus))
@@ -42,6 +104,7 @@ public class TicketsController : ControllerBase
             }
         }
 
+        // 4. Priority Filter
         if (!string.IsNullOrWhiteSpace(priority) && priority != "All")
         {
             if (Enum.TryParse<TicketPriority>(priority, true, out var parsedPriority))
@@ -55,11 +118,12 @@ public class TicketsController : ControllerBase
             query = query.Where(t => t.AssignedAgentId == agentId.Value);
         }
 
-        if (customerId.HasValue)
+        if (customerId.HasValue && currentRole != UserRole.Customer)
         {
             query = query.Where(t => t.CustomerId == customerId.Value);
         }
 
+        // 5. Search
         if (!string.IsNullOrWhiteSpace(search))
         {
             var searchLower = search.Trim().ToLower();
@@ -70,31 +134,26 @@ public class TicketsController : ControllerBase
                 (t.Customer != null && t.Customer.Email.ToLower().Contains(searchLower)));
         }
 
-        var tickets = await query
-            .OrderByDescending(t => t.CreatedAtUtc)
-            .Select(t => new TicketDto(
-                t.Id,
-                t.TicketReference,
-                t.Title,
-                t.Description,
-                t.Priority.ToString(),
-                t.Status.ToString(),
-                t.Category != null ? t.Category.Name : null,
-                t.Customer != null ? t.Customer.FullName : "Anonymous Customer",
-                t.Customer != null ? t.Customer.Email : "support@customer.io",
-                t.AssignedAgent != null ? t.AssignedAgent.FullName : null,
-                t.CreatedAtUtc,
-                t.UpdatedAtUtc,
-                t.Messages.Count
-            ))
-            .ToListAsync();
+        // 6. Sorting
+        query = (sortBy?.ToLowerInvariant()) switch
+        {
+            "oldest" => query.OrderBy(t => t.CreatedAtUtc),
+            "sla_deadline" => query.OrderBy(t => t.ResolutionDueAtUtc ?? DateTime.MaxValue),
+            "priority" => query.OrderByDescending(t => t.Priority).ThenByDescending(t => t.CreatedAtUtc),
+            _ => query.OrderByDescending(t => t.CreatedAtUtc)
+        };
 
-        return Ok(tickets);
+        var ticketEntities = await query.ToListAsync();
+        var dtos = ticketEntities.Select(MapToDto).ToList();
+
+        return Ok(dtos);
     }
 
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<TicketDetailDto>> GetById(Guid id)
     {
+        var (currentUserId, currentRole, currentOrgId) = GetCurrentUserContext();
+
         var ticket = await _dbContext.Tickets
             .Include(t => t.Category)
             .Include(t => t.Customer)
@@ -108,6 +167,31 @@ public class TicketsController : ControllerBase
         {
             return NotFound(new { message = "Ticket not found." });
         }
+
+        // Customer tenant isolation guard: customers can ONLY see their own tickets
+        if (currentRole == UserRole.Customer && currentUserId.HasValue && ticket.CustomerId != currentUserId.Value)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = "You do not have permission to view this ticket." });
+        }
+
+        // Filter out internal notes for customers
+        var messages = ticket.Messages
+            .Where(m => currentRole != UserRole.Customer || !m.IsInternalNote)
+            .OrderBy(m => m.CreatedAtUtc)
+            .Select(m => new TicketMessageDto(
+                m.Id,
+                m.TicketId,
+                m.SenderId,
+                m.Sender?.FullName ?? "Support Team",
+                m.Sender?.Role.ToString() ?? "SupportAgent",
+                m.Content,
+                m.IsInternalNote,
+                m.IsAiGenerated,
+                m.CreatedAtUtc
+            ))
+            .ToList();
+
+        var isBreached = SlaPolicy.EvaluateBreach(ticket, DateTime.UtcNow);
 
         var detailDto = new TicketDetailDto(
             ticket.Id,
@@ -126,20 +210,11 @@ public class TicketsController : ControllerBase
             ticket.CreatedAtUtc,
             ticket.UpdatedAtUtc,
             ticket.ResolvedAtUtc,
-            ticket.Messages
-                .OrderBy(m => m.CreatedAtUtc)
-                .Select(m => new TicketMessageDto(
-                    m.Id,
-                    m.TicketId,
-                    m.SenderId,
-                    m.Sender?.FullName ?? "Support Team",
-                    m.Sender?.Role.ToString() ?? "SupportAgent",
-                    m.Content,
-                    m.IsInternalNote,
-                    m.IsAiGenerated,
-                    m.CreatedAtUtc
-                ))
-                .ToList()
+            messages,
+            ticket.FirstResponseDueAtUtc,
+            ticket.ResolutionDueAtUtc,
+            ticket.FirstResponseAtUtc,
+            isBreached
         );
 
         return Ok(detailDto);
@@ -153,14 +228,13 @@ public class TicketsController : ControllerBase
             return BadRequest(new { message = "Title and description are required." });
         }
 
+        var (currentUserId, _, currentOrgId) = GetCurrentUserContext();
+
         // Determine Customer
         User? customer = null;
-        var userIdClaim = ControllerContext?.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                          ?? ControllerContext?.HttpContext?.User?.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var userId))
+        if (currentUserId.HasValue)
         {
-            customer = await _dbContext.Users.FindAsync(userId);
+            customer = await _dbContext.Users.FindAsync(currentUserId.Value);
         }
 
         if (customer == null && !string.IsNullOrWhiteSpace(request.CustomerEmail))
@@ -176,6 +250,7 @@ public class TicketsController : ControllerBase
                     FullName = string.IsNullOrWhiteSpace(request.CustomerName) ? email.Split('@')[0] : request.CustomerName.Trim(),
                     PasswordHash = "guest_account",
                     Role = UserRole.Customer,
+                    OrganizationId = currentOrgId,
                     CreatedAtUtc = DateTime.UtcNow
                 };
                 _dbContext.Users.Add(customer);
@@ -221,12 +296,15 @@ public class TicketsController : ControllerBase
             Status = TicketStatus.Open,
             CategoryId = category?.Id,
             CustomerId = customer.Id,
-            OrganizationId = customer.OrganizationId,
+            OrganizationId = customer.OrganizationId ?? currentOrgId,
             CreatedAtUtc = DateTime.UtcNow,
             UpdatedAtUtc = DateTime.UtcNow
         };
 
-        // Create initial message
+        // Apply SLA deadlines based on Priority
+        SlaPolicy.ApplySlaTargets(ticket);
+
+        // Initial customer message
         var initialMessage = new TicketMessage
         {
             Id = Guid.NewGuid(),
@@ -242,22 +320,7 @@ public class TicketsController : ControllerBase
         _dbContext.TicketMessages.Add(initialMessage);
         await _dbContext.SaveChangesAsync();
 
-        var resultDto = new TicketDto(
-            ticket.Id,
-            ticket.TicketReference,
-            ticket.Title,
-            ticket.Description,
-            ticket.Priority.ToString(),
-            ticket.Status.ToString(),
-            category?.Name,
-            customer.FullName,
-            customer.Email,
-            null,
-            ticket.CreatedAtUtc,
-            ticket.UpdatedAtUtc,
-            1
-        );
-
+        var resultDto = MapToDto(ticket);
         return CreatedAtAction(nameof(GetById), new { id = ticket.Id }, resultDto);
     }
 
@@ -275,18 +338,16 @@ public class TicketsController : ControllerBase
             return NotFound(new { message = "Ticket not found." });
         }
 
-        User? sender = null;
-        var userIdClaim = ControllerContext?.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                          ?? ControllerContext?.HttpContext?.User?.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+        var (currentUserId, currentRole, _) = GetCurrentUserContext();
 
-        if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var userId))
+        User? sender = null;
+        if (currentUserId.HasValue)
         {
-            sender = await _dbContext.Users.FindAsync(userId);
+            sender = await _dbContext.Users.FindAsync(currentUserId.Value);
         }
 
         if (sender == null)
         {
-            // Fallback to assigned agent or customer or first agent
             if (request.IsInternalNote)
             {
                 sender = await _dbContext.Users.FirstOrDefaultAsync(u => u.Role == UserRole.SupportAgent || u.Role == UserRole.SupportManager);
@@ -298,6 +359,7 @@ public class TicketsController : ControllerBase
             }
         }
 
+        var now = DateTime.UtcNow;
         var message = new TicketMessage
         {
             Id = Guid.NewGuid(),
@@ -306,13 +368,19 @@ public class TicketsController : ControllerBase
             Content = request.Content.Trim(),
             IsInternalNote = request.IsInternalNote,
             IsAiGenerated = request.IsAiGenerated,
-            CreatedAtUtc = DateTime.UtcNow
+            CreatedAtUtc = now
         };
 
-        ticket.UpdatedAtUtc = DateTime.UtcNow;
-        if (ticket.Status == TicketStatus.Open && sender?.Role == UserRole.SupportAgent)
+        ticket.UpdatedAtUtc = now;
+
+        // If an agent responds publicly, record first response SLA and progress open ticket
+        if (!request.IsInternalNote && (sender?.Role == UserRole.SupportAgent || sender?.Role == UserRole.SupportManager || sender?.Role == UserRole.SystemAdministrator))
         {
-            ticket.Status = TicketStatus.InProgress;
+            SlaPolicy.RecordFirstResponse(ticket, now);
+            if (ticket.Status == TicketStatus.Open)
+            {
+                ticket.Status = TicketStatus.InProgress;
+            }
         }
 
         _dbContext.TicketMessages.Add(message);
@@ -348,33 +416,39 @@ public class TicketsController : ControllerBase
             return NotFound(new { message = "Ticket not found." });
         }
 
+        var now = DateTime.UtcNow;
         ticket.Status = request.Status;
-        ticket.UpdatedAtUtc = DateTime.UtcNow;
+        ticket.UpdatedAtUtc = now;
 
         if (request.Status == TicketStatus.Resolved || request.Status == TicketStatus.Closed)
         {
-            ticket.ResolvedAtUtc = DateTime.UtcNow;
+            SlaPolicy.RecordResolution(ticket, now);
         }
 
         await _dbContext.SaveChangesAsync();
+        return Ok(MapToDto(ticket));
+    }
 
-        var dto = new TicketDto(
-            ticket.Id,
-            ticket.TicketReference,
-            ticket.Title,
-            ticket.Description,
-            ticket.Priority.ToString(),
-            ticket.Status.ToString(),
-            ticket.Category?.Name,
-            ticket.Customer?.FullName ?? "Customer",
-            ticket.Customer?.Email ?? "",
-            ticket.AssignedAgent?.FullName,
-            ticket.CreatedAtUtc,
-            ticket.UpdatedAtUtc,
-            ticket.Messages.Count
-        );
+    [HttpPatch("{id:guid}/priority")]
+    public async Task<ActionResult<TicketDto>> UpdatePriority(Guid id, [FromBody] UpdateTicketPriorityRequest request)
+    {
+        var ticket = await _dbContext.Tickets
+            .Include(t => t.Category)
+            .Include(t => t.Customer)
+            .Include(t => t.AssignedAgent)
+            .Include(t => t.Messages)
+            .FirstOrDefaultAsync(t => t.Id == id);
 
-        return Ok(dto);
+        if (ticket == null)
+        {
+            return NotFound(new { message = "Ticket not found." });
+        }
+
+        SlaPolicy.RecalculateForPriority(ticket, request.Priority);
+        ticket.UpdatedAtUtc = DateTime.UtcNow;
+
+        await _dbContext.SaveChangesAsync();
+        return Ok(MapToDto(ticket));
     }
 
     [HttpPatch("{id:guid}/assign")]
@@ -415,23 +489,112 @@ public class TicketsController : ControllerBase
         ticket.UpdatedAtUtc = DateTime.UtcNow;
         await _dbContext.SaveChangesAsync();
 
-        var dto = new TicketDto(
-            ticket.Id,
-            ticket.TicketReference,
-            ticket.Title,
-            ticket.Description,
-            ticket.Priority.ToString(),
-            ticket.Status.ToString(),
-            ticket.Category?.Name,
-            ticket.Customer?.FullName ?? "Customer",
-            ticket.Customer?.Email ?? "",
-            ticket.AssignedAgent?.FullName,
-            ticket.CreatedAtUtc,
-            ticket.UpdatedAtUtc,
-            ticket.Messages.Count
-        );
+        return Ok(MapToDto(ticket));
+    }
 
-        return Ok(dto);
+    // --- Bulk Triage Actions (Sprint 5) ---
+
+    [HttpPost("bulk-status")]
+    public async Task<ActionResult<BulkOperationResultDto>> BulkUpdateStatus([FromBody] BulkUpdateStatusRequest request)
+    {
+        if (request.TicketIds == null || request.TicketIds.Count == 0)
+        {
+            return BadRequest(new { message = "TicketIds list cannot be empty." });
+        }
+
+        var tickets = await _dbContext.Tickets
+            .Where(t => request.TicketIds.Contains(t.Id))
+            .ToListAsync();
+
+        var now = DateTime.UtcNow;
+        foreach (var ticket in tickets)
+        {
+            ticket.Status = request.Status;
+            ticket.UpdatedAtUtc = now;
+            if (request.Status == TicketStatus.Resolved || request.Status == TicketStatus.Closed)
+            {
+                SlaPolicy.RecordResolution(ticket, now);
+            }
+        }
+
+        await _dbContext.SaveChangesAsync();
+
+        return Ok(new BulkOperationResultDto(
+            UpdatedCount: tickets.Count,
+            AffectedTicketIds: tickets.Select(t => t.Id).ToList(),
+            Message: $"Successfully updated status to {request.Status} for {tickets.Count} ticket(s)."
+        ));
+    }
+
+    [HttpPost("bulk-assign")]
+    public async Task<ActionResult<BulkOperationResultDto>> BulkAssign([FromBody] BulkAssignRequest request)
+    {
+        if (request.TicketIds == null || request.TicketIds.Count == 0)
+        {
+            return BadRequest(new { message = "TicketIds list cannot be empty." });
+        }
+
+        User? agent = null;
+        if (request.AgentId.HasValue)
+        {
+            agent = await _dbContext.Users.FindAsync(request.AgentId.Value);
+            if (agent == null)
+            {
+                return BadRequest(new { message = "Assigned agent does not exist." });
+            }
+        }
+
+        var tickets = await _dbContext.Tickets
+            .Where(t => request.TicketIds.Contains(t.Id))
+            .ToListAsync();
+
+        var now = DateTime.UtcNow;
+        foreach (var ticket in tickets)
+        {
+            ticket.AssignedAgentId = agent?.Id;
+            ticket.UpdatedAtUtc = now;
+            if (agent != null && ticket.Status == TicketStatus.Open)
+            {
+                ticket.Status = TicketStatus.InProgress;
+            }
+        }
+
+        await _dbContext.SaveChangesAsync();
+
+        var agentName = agent != null ? agent.FullName : "Unassigned";
+        return Ok(new BulkOperationResultDto(
+            UpdatedCount: tickets.Count,
+            AffectedTicketIds: tickets.Select(t => t.Id).ToList(),
+            Message: $"Successfully assigned {tickets.Count} ticket(s) to {agentName}."
+        ));
+    }
+
+    [HttpPost("bulk-priority")]
+    public async Task<ActionResult<BulkOperationResultDto>> BulkUpdatePriority([FromBody] BulkUpdatePriorityRequest request)
+    {
+        if (request.TicketIds == null || request.TicketIds.Count == 0)
+        {
+            return BadRequest(new { message = "TicketIds list cannot be empty." });
+        }
+
+        var tickets = await _dbContext.Tickets
+            .Where(t => request.TicketIds.Contains(t.Id))
+            .ToListAsync();
+
+        var now = DateTime.UtcNow;
+        foreach (var ticket in tickets)
+        {
+            SlaPolicy.RecalculateForPriority(ticket, request.Priority);
+            ticket.UpdatedAtUtc = now;
+        }
+
+        await _dbContext.SaveChangesAsync();
+
+        return Ok(new BulkOperationResultDto(
+            UpdatedCount: tickets.Count,
+            AffectedTicketIds: tickets.Select(t => t.Id).ToList(),
+            Message: $"Successfully updated priority to {request.Priority} for {tickets.Count} ticket(s)."
+        ));
     }
 
     [HttpGet("categories")]
@@ -443,5 +606,29 @@ public class TicketsController : ControllerBase
             .ToListAsync();
 
         return Ok(categories);
+    }
+
+    private static TicketDto MapToDto(Ticket t)
+    {
+        var isBreached = SlaPolicy.EvaluateBreach(t, DateTime.UtcNow);
+        return new TicketDto(
+            t.Id,
+            t.TicketReference,
+            t.Title,
+            t.Description,
+            t.Priority.ToString(),
+            t.Status.ToString(),
+            t.Category?.Name,
+            t.Customer?.FullName ?? "Customer",
+            t.Customer?.Email ?? "",
+            t.AssignedAgent?.FullName,
+            t.CreatedAtUtc,
+            t.UpdatedAtUtc,
+            t.Messages.Count,
+            t.FirstResponseDueAtUtc,
+            t.ResolutionDueAtUtc,
+            t.FirstResponseAtUtc,
+            isBreached
+        );
     }
 }

@@ -17,6 +17,15 @@ export interface AuthResponse {
   user: User;
 }
 
+export type QueuePreset = 'all' | 'assigned_to_me' | 'unassigned' | 'sla_at_risk' | 'urgent' | 'resolved';
+export type SortOption = 'newest' | 'oldest' | 'sla_deadline' | 'priority';
+
+export interface BulkOperationResult {
+  updatedCount: number;
+  affectedTicketIds: string[];
+  message: string;
+}
+
 export interface Ticket {
   id: string;
   ticketReference: string;
@@ -31,6 +40,10 @@ export interface Ticket {
   createdAtUtc: string;
   updatedAtUtc?: string | null;
   messageCount: number;
+  firstResponseDueAtUtc?: string | null;
+  resolutionDueAtUtc?: string | null;
+  firstResponseAtUtc?: string | null;
+  isSlaBreached?: boolean;
 }
 
 export interface TicketMessage {

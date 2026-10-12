@@ -85,6 +85,12 @@ public class Ticket
     public DateTime? UpdatedAtUtc { get; set; }
     public DateTime? ResolvedAtUtc { get; set; }
 
+    // SLA Tracking (Sprint 5)
+    public DateTime? FirstResponseDueAtUtc { get; set; }
+    public DateTime? ResolutionDueAtUtc { get; set; }
+    public DateTime? FirstResponseAtUtc { get; set; }
+    public bool IsSlaBreached { get; set; } = false;
+
     public ICollection<TicketMessage> Messages { get; set; } = new List<TicketMessage>();
 }
 

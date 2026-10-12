@@ -8,7 +8,8 @@ import type {
   User,
   AuthResponse,
   UserRole,
-  TicketStatus
+  TicketStatus,
+  TicketPriority
 } from '../types';
 
 const API_BASE_URL = 'http://localhost:5000/api';
@@ -26,6 +27,25 @@ const getAuthHeaders = (customToken?: string): HeadersInit => {
 
 const FALLBACK_TICKETS: Ticket[] = [
   {
+    id: '55555555-5555-5555-5555-555555555555',
+    ticketReference: 'SP-1043',
+    title: 'Payment gateway webhooks returning 500 error in checkout',
+    description: 'Customers are reporting charged credit cards but order confirmation states failed checkout.',
+    priority: 'Urgent',
+    status: 'Open',
+    categoryName: 'Billing',
+    customerName: 'Claire Redfield',
+    customerEmail: 'claire@umbrella-corp.com',
+    assignedAgentName: null,
+    createdAtUtc: new Date(Date.now() - 35 * 60000).toISOString(),
+    updatedAtUtc: null,
+    messageCount: 1,
+    firstResponseDueAtUtc: new Date(Date.now() + 25 * 60000).toISOString(), // Due in 25 min!
+    resolutionDueAtUtc: new Date(Date.now() + 3 * 3600000).toISOString(),
+    firstResponseAtUtc: null,
+    isSlaBreached: false
+  },
+  {
     id: '11111111-1111-1111-1111-111111111111',
     ticketReference: 'SP-1042',
     title: 'Unable to connect custom domain to workspace',
@@ -38,7 +58,11 @@ const FALLBACK_TICKETS: Ticket[] = [
     assignedAgentName: 'Alex Rivera',
     createdAtUtc: new Date(Date.now() - 2 * 3600000).toISOString(),
     updatedAtUtc: new Date(Date.now() - 15 * 60000).toISOString(),
-    messageCount: 3
+    messageCount: 3,
+    firstResponseDueAtUtc: new Date(Date.now() + 2 * 3600000).toISOString(),
+    resolutionDueAtUtc: new Date(Date.now() + 10 * 3600000).toISOString(),
+    firstResponseAtUtc: new Date(Date.now() - 15 * 60000).toISOString(),
+    isSlaBreached: false
   },
   {
     id: '22222222-2222-2222-2222-222222222222',
@@ -53,7 +77,11 @@ const FALLBACK_TICKETS: Ticket[] = [
     assignedAgentName: 'Emma Watson',
     createdAtUtc: new Date(Date.now() - 6 * 3600000).toISOString(),
     updatedAtUtc: new Date(Date.now() - 1 * 3600000).toISOString(),
-    messageCount: 4
+    messageCount: 4,
+    firstResponseDueAtUtc: new Date(Date.now() + 2 * 3600000).toISOString(),
+    resolutionDueAtUtc: new Date(Date.now() + 18 * 3600000).toISOString(),
+    firstResponseAtUtc: new Date(Date.now() - 1 * 3600000).toISOString(),
+    isSlaBreached: false
   },
   {
     id: '33333333-3333-3333-3333-333333333333',
@@ -68,7 +96,11 @@ const FALLBACK_TICKETS: Ticket[] = [
     assignedAgentName: null,
     createdAtUtc: new Date(Date.now() - 12 * 3600000).toISOString(),
     updatedAtUtc: null,
-    messageCount: 1
+    messageCount: 1,
+    firstResponseDueAtUtc: new Date(Date.now() - 11 * 3600000).toISOString(), // Breached!
+    resolutionDueAtUtc: new Date(Date.now() - 8 * 3600000).toISOString(), // Breached!
+    firstResponseAtUtc: null,
+    isSlaBreached: true
   },
   {
     id: '44444444-4444-4444-4444-444444444444',
@@ -83,7 +115,11 @@ const FALLBACK_TICKETS: Ticket[] = [
     assignedAgentName: 'Alex Rivera',
     createdAtUtc: new Date(Date.now() - 24 * 3600000).toISOString(),
     updatedAtUtc: new Date(Date.now() - 3 * 3600000).toISOString(),
-    messageCount: 5
+    messageCount: 5,
+    firstResponseDueAtUtc: new Date(Date.now() - 20 * 3600000).toISOString(),
+    resolutionDueAtUtc: new Date(Date.now() + 48 * 3600000).toISOString(),
+    firstResponseAtUtc: new Date(Date.now() - 20 * 3600000).toISOString(),
+    isSlaBreached: false
   }
 ];
 
@@ -269,12 +305,20 @@ export const ApiService = {
   },
 
   // --- Tickets & Messages ---
-  async getTickets(params?: { status?: string; priority?: string; search?: string }): Promise<Ticket[]> {
+  async getTickets(params?: { 
+    status?: string; 
+    priority?: string; 
+    search?: string; 
+    queue?: string;
+    sortBy?: string;
+  }): Promise<Ticket[]> {
     try {
       const query = new URLSearchParams();
       if (params?.status && params.status !== 'All') query.append('status', params.status);
       if (params?.priority && params.priority !== 'All') query.append('priority', params.priority);
       if (params?.search) query.append('search', params.search);
+      if (params?.queue) query.append('queue', params.queue);
+      if (params?.sortBy) query.append('sortBy', params.sortBy);
 
       const res = await fetch(`${API_BASE_URL}/tickets?${query.toString()}`, {
         headers: getAuthHeaders()
@@ -283,6 +327,34 @@ export const ApiService = {
       return await res.json();
     } catch {
       let filtered = [...FALLBACK_TICKETS];
+      
+      // Queue preset filtering
+      if (params?.queue && params.queue !== 'all') {
+        const now = Date.now();
+        switch (params.queue) {
+          case 'assigned_to_me':
+            filtered = filtered.filter(t => t.assignedAgentName?.includes('Alex'));
+            break;
+          case 'unassigned':
+            filtered = filtered.filter(t => !t.assignedAgentName && t.status !== 'Resolved' && t.status !== 'Closed');
+            break;
+          case 'sla_at_risk':
+            filtered = filtered.filter(t => 
+              t.status !== 'Resolved' && t.status !== 'Closed' &&
+              (t.isSlaBreached || 
+               (t.firstResponseDueAtUtc && new Date(t.firstResponseDueAtUtc).getTime() - now <= 2 * 3600000) ||
+               (t.resolutionDueAtUtc && new Date(t.resolutionDueAtUtc).getTime() - now <= 2 * 3600000))
+            );
+            break;
+          case 'urgent':
+            filtered = filtered.filter(t => t.priority === 'Urgent' && t.status !== 'Resolved' && t.status !== 'Closed');
+            break;
+          case 'resolved':
+            filtered = filtered.filter(t => t.status === 'Resolved' || t.status === 'Closed');
+            break;
+        }
+      }
+
       if (params?.status && params.status !== 'All') {
         filtered = filtered.filter(t => t.status.toLowerCase() === params.status?.toLowerCase());
       }
@@ -297,6 +369,31 @@ export const ApiService = {
           t.customerName.toLowerCase().includes(s)
         );
       }
+
+      // Sorting
+      if (params?.sortBy) {
+        switch (params.sortBy) {
+          case 'oldest':
+            filtered.sort((a, b) => new Date(a.createdAtUtc).getTime() - new Date(b.createdAtUtc).getTime());
+            break;
+          case 'sla_deadline':
+            filtered.sort((a, b) => {
+              const aTime = a.firstResponseDueAtUtc ? new Date(a.firstResponseDueAtUtc).getTime() : Infinity;
+              const bTime = b.firstResponseDueAtUtc ? new Date(b.firstResponseDueAtUtc).getTime() : Infinity;
+              return aTime - bTime;
+            });
+            break;
+          case 'priority': {
+            const weight: Record<string, number> = { Urgent: 4, High: 3, Medium: 2, Low: 1 };
+            filtered.sort((a, b) => (weight[b.priority] || 0) - (weight[a.priority] || 0));
+            break;
+          }
+          default:
+            filtered.sort((a, b) => new Date(b.createdAtUtc).getTime() - new Date(a.createdAtUtc).getTime());
+            break;
+        }
+      }
+
       return filtered;
     }
   },
@@ -348,6 +445,10 @@ export const ApiService = {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
     } catch {
+      const now = new Date();
+      const firstResponseHours = data.priority === 'Urgent' ? 1 : data.priority === 'High' ? 4 : data.priority === 'Medium' ? 8 : 24;
+      const resHours = data.priority === 'Urgent' ? 4 : data.priority === 'High' ? 12 : data.priority === 'Medium' ? 24 : 72;
+
       const newTicket: Ticket = {
         id: crypto.randomUUID(),
         ticketReference: `SP-${1040 + FALLBACK_TICKETS.length + 1}`,
@@ -359,9 +460,13 @@ export const ApiService = {
         customerName: data.customerName,
         customerEmail: data.customerEmail,
         assignedAgentName: null,
-        createdAtUtc: new Date().toISOString(),
+        createdAtUtc: now.toISOString(),
         updatedAtUtc: null,
-        messageCount: 1
+        messageCount: 1,
+        firstResponseDueAtUtc: new Date(now.getTime() + firstResponseHours * 3600000).toISOString(),
+        resolutionDueAtUtc: new Date(now.getTime() + resHours * 3600000).toISOString(),
+        firstResponseAtUtc: null,
+        isSlaBreached: false
       };
       FALLBACK_TICKETS.unshift(newTicket);
       return newTicket;
@@ -416,6 +521,26 @@ export const ApiService = {
     }
   },
 
+  async updateTicketPriority(ticketId: string, priority: TicketPriority): Promise<Ticket> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/tickets/${ticketId}/priority`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ priority })
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch {
+      const ticket = FALLBACK_TICKETS.find(t => t.id === ticketId);
+      if (ticket) {
+        ticket.priority = priority;
+        ticket.updatedAtUtc = new Date().toISOString();
+        return ticket;
+      }
+      throw new Error('Ticket not found');
+    }
+  },
+
   async assignTicket(ticketId: string, agentId: string | null): Promise<Ticket> {
     try {
       const res = await fetch(`${API_BASE_URL}/tickets/${ticketId}/assign`, {
@@ -433,6 +558,77 @@ export const ApiService = {
         return ticket;
       }
       throw new Error('Ticket not found');
+    }
+  },
+
+  // --- Bulk Triage Operations (Sprint 5) ---
+  async bulkUpdateStatus(ticketIds: string[], status: TicketStatus): Promise<{ updatedCount: number; message: string }> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/tickets/bulk-status`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ ticketIds, status })
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch {
+      let count = 0;
+      for (const id of ticketIds) {
+        const t = FALLBACK_TICKETS.find(item => item.id === id);
+        if (t) {
+          t.status = status;
+          t.updatedAtUtc = new Date().toISOString();
+          count++;
+        }
+      }
+      return { updatedCount: count, message: `Updated ${count} tickets to ${status}` };
+    }
+  },
+
+  async bulkAssignAgent(ticketIds: string[], agentId: string | null): Promise<{ updatedCount: number; message: string }> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/tickets/bulk-assign`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ ticketIds, agentId })
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch {
+      let count = 0;
+      const agentName = agentId ? 'Alex Rivera' : null;
+      for (const id of ticketIds) {
+        const t = FALLBACK_TICKETS.find(item => item.id === id);
+        if (t) {
+          t.assignedAgentName = agentName;
+          t.updatedAtUtc = new Date().toISOString();
+          count++;
+        }
+      }
+      return { updatedCount: count, message: `Assigned ${count} tickets to ${agentName || 'Unassigned'}` };
+    }
+  },
+
+  async bulkUpdatePriority(ticketIds: string[], priority: TicketPriority): Promise<{ updatedCount: number; message: string }> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/tickets/bulk-priority`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ ticketIds, priority })
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch {
+      let count = 0;
+      for (const id of ticketIds) {
+        const t = FALLBACK_TICKETS.find(item => item.id === id);
+        if (t) {
+          t.priority = priority;
+          t.updatedAtUtc = new Date().toISOString();
+          count++;
+        }
+      }
+      return { updatedCount: count, message: `Updated priority to ${priority} for ${count} tickets` };
     }
   },
 

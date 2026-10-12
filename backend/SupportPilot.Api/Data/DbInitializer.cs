@@ -96,13 +96,15 @@ public static class DbInitializer
             Title = "Unable to connect custom domain to workspace",
             Description = "I followed DNS CNAME setup for support.mycompany.io but certificate validation timed out.",
             Priority = TicketPriority.High,
-            Status = TicketStatus.Open,
+            Status = TicketStatus.InProgress,
             CategoryId = catDns.Id,
             CustomerId = customer.Id,
             AssignedAgentId = agent.Id,
             OrganizationId = org.Id,
-            CreatedAtUtc = DateTime.UtcNow.AddHours(-2)
+            CreatedAtUtc = DateTime.UtcNow.AddHours(-2),
+            FirstResponseAtUtc = DateTime.UtcNow.AddHours(-1)
         };
+        SlaPolicy.ApplySlaTargets(sampleTicket);
 
         var initialMsg = new TicketMessage
         {
