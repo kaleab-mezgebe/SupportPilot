@@ -45,10 +45,12 @@ project.lock.json
 project.fragment.lock.json
 artifacts/
 *.Generated.cs
+efbundle
+*/efbundle
 
 # User-specific & local appsettings
 appsettings.Development.local.json
-appsettings.Production.json
+appsettings.Production.local.json
 appsettings.Local.json
 *.local.json
 

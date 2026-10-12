@@ -23,7 +23,7 @@ public class GroundedRagService : IGroundedRagService
         _llmProvider = llmProvider ?? new LocalDenseLlmProvider();
     }
 
-    public async Task<RagAnswerDto> GenerateAnswerAsync(string query, double threshold = 0.55)
+    public async Task<RagAnswerDto> GenerateAnswerAsync(string query, double threshold = 0.50)
     {
         if (string.IsNullOrWhiteSpace(query))
         {

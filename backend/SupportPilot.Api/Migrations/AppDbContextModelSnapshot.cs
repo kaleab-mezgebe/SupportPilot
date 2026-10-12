@@ -59,6 +59,37 @@ namespace SupportPilot.Api.Migrations
                     b.ToTable("AuditLogs");
                 });
 
+            modelBuilder.Entity("SupportPilot.Api.Entities.CsatSurvey", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("FeedbackComment")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Rating")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("SubmittedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("TicketId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("TicketId")
+                        .IsUnique();
+
+                    b.ToTable("CsatSurveys");
+                });
+
             modelBuilder.Entity("SupportPilot.Api.Entities.KnowledgeArticle", b =>
                 {
                     b.Property<Guid>("Id")
@@ -75,6 +106,9 @@ namespace SupportPilot.Api.Migrations
 
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EmbeddingJson")
+                        .HasColumnType("text");
 
                     b.Property<bool>("IsPublished")
                         .HasColumnType("boolean");
@@ -142,11 +176,23 @@ namespace SupportPilot.Api.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<DateTime?>("FirstResponseAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("FirstResponseDueAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsSlaBreached")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid?>("OrganizationId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("Priority")
                         .HasColumnType("integer");
+
+                    b.Property<DateTime?>("ResolutionDueAtUtc")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("ResolvedAtUtc")
                         .HasColumnType("timestamp with time zone");
@@ -284,6 +330,25 @@ namespace SupportPilot.Api.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("SupportPilot.Api.Entities.CsatSurvey", b =>
+                {
+                    b.HasOne("SupportPilot.Api.Entities.User", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SupportPilot.Api.Entities.Ticket", "Ticket")
+                        .WithOne("CsatSurvey")
+                        .HasForeignKey("SupportPilot.Api.Entities.CsatSurvey", "TicketId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("Ticket");
+                });
+
             modelBuilder.Entity("SupportPilot.Api.Entities.Ticket", b =>
                 {
                     b.HasOne("SupportPilot.Api.Entities.User", "AssignedAgent")
@@ -351,6 +416,8 @@ namespace SupportPilot.Api.Migrations
 
             modelBuilder.Entity("SupportPilot.Api.Entities.Ticket", b =>
                 {
+                    b.Navigation("CsatSurvey");
+
                     b.Navigation("Messages");
                 });
 #pragma warning restore 612, 618

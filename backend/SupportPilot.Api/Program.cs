@@ -34,8 +34,18 @@ builder.Services.AddScoped<ILlmProvider, CompositeLlmProvider>();
 builder.Services.AddScoped<IEmailNotificationService, EmailNotificationService>();
 builder.Services.AddScoped<ISlackIntegrationService, SlackIntegrationService>();
 
-// Add SignalR (Sprint 7)
-builder.Services.AddSignalR();
+// Add SignalR (Sprint 7 + Redis Scale-out)
+var signalRBuilder = builder.Services.AddSignalR();
+var redisConnectionString = builder.Configuration["Redis:ConnectionString"] 
+                            ?? builder.Configuration["REDIS_CONNECTION_STRING"] 
+                            ?? Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING");
+if (!string.IsNullOrWhiteSpace(redisConnectionString))
+{
+    signalRBuilder.AddStackExchangeRedis(redisConnectionString, options =>
+    {
+        options.Configuration.ChannelPrefix = StackExchange.Redis.RedisChannel.Literal("SupportPilot");
+    });
+}
 
 // Health Checks (Sprint 8)
 builder.Services.AddHealthChecks();
@@ -208,13 +218,6 @@ app.UseAuthorization();
 
 // Health Check Endpoints
 app.MapHealthChecks("/health");
-app.MapGet("/api/health", () => Results.Ok(new 
-{ 
-    status = "Healthy", 
-    timestamp = DateTime.UtcNow, 
-    service = "SupportPilot.Api",
-    version = "1.0.0" 
-}));
 
 app.MapControllers();
 app.MapHub<SupportChatHub>("/hubs/chat");

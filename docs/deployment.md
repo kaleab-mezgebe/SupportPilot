@@ -18,7 +18,7 @@ This guide details the steps to deploy **SupportPilot** in a production environm
 
 ## 2. Environment Variables Configuration
 
-Create a `.env` file in the root directory next to `docker-compose.prod.yml`:
+Create a `.env` file in the root directory next to `docker-compose.prod.yml` (or copy from `.env.example`):
 
 ```bash
 # Database Configuration
@@ -30,6 +30,26 @@ POSTGRES_DB=supportpilot_production
 JWT_SECRET_KEY=generate_a_cryptographically_secure_key_at_least_32_characters_long!
 JWT_ISSUER=SupportPilot.Api
 JWT_AUDIENCE=SupportPilot.Client
+
+# LLM Providers Configuration (OpenAI & Google Gemini)
+LLM_PROVIDER=local # or openai / gemini
+OPENAI_API_KEY=your_openai_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Slack Alert Webhooks
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/YOUR_WORKSPACE_ID/YOUR_CHANNEL_ID/YOUR_WEBHOOK_TOKEN
+
+# Outbound Email (SMTP / SendGrid / Postmark)
+SMTP_HOST=smtp.sendgrid.net
+SMTP_PORT=587
+SMTP_USERNAME=apikey
+SMTP_PASSWORD=your_sendgrid_api_key
+SMTP_ENABLE_SSL=true
+SMTP_FROM_EMAIL=support@supportpilot.io
+SMTP_FROM_NAME=SupportPilot Support
+
+# Distributed SignalR Backplane (Redis)
+REDIS_CONNECTION_STRING=redis:6379,abortConnect=false
 
 # Host Port Exposure
 PORT=80
@@ -56,13 +76,26 @@ docker compose -f docker-compose.prod.yml config
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-### Step 4: Verify Service Health
+### Step 4: Apply Database Migrations (Idempotent)
+SupportPilot generates an idempotent SQL migration script that creates and updates all tables, SLA tracking, pgvector embeddings, and CSAT surveys:
+
+```bash
+# Execute idempotent migrations directly into PostgreSQL container:
+docker exec -i supportpilot-postgres-prod psql -U ${POSTGRES_USER:-supportpilot} -d ${POSTGRES_DB:-supportpilot_prod_db} < backend/SupportPilot.Api/Migrations/idempotent_migration.sql
+```
+
+Alternatively, if using the .NET CLI tools:
+```bash
+dotnet ef database update --project backend/SupportPilot.Api/SupportPilot.Api.csproj
+```
+
+### Step 5: Verify Service Health
 ```bash
 docker compose -f docker-compose.prod.yml ps
 ```
-All containers (`supportpilot-postgres-prod`, `supportpilot-backend-prod`, `supportpilot-frontend-prod`) should report state `healthy` or `up`.
+All containers (`supportpilot-postgres-prod`, `supportpilot-redis-prod`, `supportpilot-backend-prod`, `supportpilot-frontend-prod`) should report state `healthy` or `up`.
 
-### Step 5: Test Health Endpoints
+### Step 6: Test Health Endpoints
 ```bash
 # Backend health endpoint
 curl -f http://localhost:8080/health

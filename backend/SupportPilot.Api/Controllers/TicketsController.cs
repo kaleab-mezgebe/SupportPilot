@@ -21,10 +21,10 @@ public class TicketsController : ControllerBase
 
     private (Guid? UserId, UserRole? Role, Guid? OrgId) GetCurrentUserContext()
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                          ?? User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
-        var roleClaim = User.FindFirst(ClaimTypes.Role)?.Value;
-        var orgClaim = User.FindFirst("organization_id")?.Value;
+        var userIdClaim = User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                          ?? User?.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+        var roleClaim = User?.FindFirst(ClaimTypes.Role)?.Value;
+        var orgClaim = User?.FindFirst("organization_id")?.Value;
 
         Guid? userId = Guid.TryParse(userIdClaim, out var uid) ? uid : null;
         UserRole? role = Enum.TryParse<UserRole>(roleClaim, true, out var r) ? r : null;

@@ -187,7 +187,7 @@ public record CreateKnowledgeArticleRequest(
 // --- Sprint 6: RAG & Semantic Search DTOs ---
 public record RagQueryRequest(
     string Query,
-    double ConfidenceThreshold = 0.55
+    double ConfidenceThreshold = 0.50
 );
 
 public record RagCitationDto(

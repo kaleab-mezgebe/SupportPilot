@@ -134,8 +134,6 @@ public class WebhooksController : ControllerBase
             ? TicketPriority.Urgent
             : TicketPriority.Medium;
 
-        var targetDates = SlaPolicy.CalculateTargets(priority);
-
         var newTicket = new Ticket
         {
             Id = Guid.NewGuid(),
@@ -146,10 +144,9 @@ public class WebhooksController : ControllerBase
             Status = TicketStatus.Open,
             CustomerId = customer.Id,
             OrganizationId = org?.Id,
-            CreatedAtUtc = DateTime.UtcNow,
-            FirstResponseDueAtUtc = targetDates.FirstResponseDueUtc,
-            ResolutionDueAtUtc = targetDates.ResolutionDueUtc
+            CreatedAtUtc = DateTime.UtcNow
         };
+        SlaPolicy.ApplySlaTargets(newTicket);
 
         _context.Tickets.Add(newTicket);
         await _context.SaveChangesAsync();

@@ -123,7 +123,7 @@ public class AuthAndTicketsIntegrationTests : IClassFixture<CustomWebApplication
 
         var createdTicket = await response.Content.ReadFromJsonAsync<TicketDetailDto>(JsonOptions);
         Assert.NotNull(createdTicket);
-        Assert.StartsWith("TCK-", createdTicket.TicketReference);
+        Assert.StartsWith("SP-", createdTicket.TicketReference);
         Assert.Equal("Urgent", createdTicket.Priority);
         Assert.NotNull(createdTicket.FirstResponseDueAtUtc);
         Assert.NotNull(createdTicket.ResolutionDueAtUtc);

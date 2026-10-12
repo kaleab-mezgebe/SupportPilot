@@ -28,6 +28,26 @@ services:
           cpus: '0.5'
           memory: 512M
 
+  redis:
+    image: redis:7-alpine
+    container_name: supportpilot-redis-prod
+    restart: always
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data_prod:/data
+    networks:
+      - supportpilot-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
   backend:
     build:
       context: .
@@ -41,8 +61,21 @@ services:
       - Jwt__Key=${JWT_SECRET_KEY:-SupportPilot_Super_Secret_Production_Key_2026_Minimum_32_Chars_Length!}
       - Jwt__Issuer=SupportPilot.Api
       - Jwt__Audience=SupportPilot.Client
+      - Llm__Provider=${LLM_PROVIDER:-local}
+      - Llm__OpenAiApiKey=${OPENAI_API_KEY:-}
+      - Llm__GeminiApiKey=${GEMINI_API_KEY:-}
+      - Integrations__SlackWebhookUrl=${SLACK_WEBHOOK_URL:-}
+      - Smtp__Host=${SMTP_HOST:-}
+      - Smtp__Port=${SMTP_PORT:-587}
+      - Smtp__Username=${SMTP_USERNAME:-}
+      - Smtp__Password=${SMTP_PASSWORD:-}
+      - Smtp__EnableSsl=${SMTP_ENABLE_SSL:-true}
+      - Smtp__FromEmail=${SMTP_FROM_EMAIL:-support@supportpilot.io}
+      - Redis__ConnectionString=${REDIS_CONNECTION_STRING:-redis:6379,abortConnect=false}
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - supportpilot-network
@@ -86,6 +119,8 @@ services:
 volumes:
   postgres_data_prod:
     name: supportpilot_postgres_data_prod
+  redis_data_prod:
+    name: supportpilot_redis_data_prod
 
 networks:
   supportpilot-network:

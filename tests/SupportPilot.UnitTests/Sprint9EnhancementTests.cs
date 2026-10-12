@@ -151,7 +151,7 @@ public class Sprint9EnhancementTests
         // Arrange
         using var context = CreateInMemoryDbContext();
         var ticket = await context.Tickets.FirstAsync();
-        var controller = new TicketsController(context, new NullLogger<TicketsController>());
+        var controller = new TicketsController(context);
 
         var csatRequest = new SubmitCsatRequest(
             Rating: 5,

@@ -106,8 +106,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         var category = new TicketCategory
         {
             Id = Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd"),
-            Name = "Billing & Subscriptions",
-            OrganizationId = org.Id
+            Name = "Billing & Subscriptions"
         };
         db.TicketCategories.Add(category);
 
@@ -117,7 +116,6 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             Title = "Refund and Billing Policy",
             Content = "All refunds requested within 14 days of purchase will be credited back to your original payment method within 3 business days.",
             Category = "Billing",
-            OrganizationId = org.Id,
             CreatedAtUtc = DateTime.UtcNow
         };
         db.KnowledgeArticles.Add(article);
@@ -126,7 +124,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         {
             Id = Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff"),
             TicketReference = "TCK-TEST-001",
-            Subject = "Need help with invoice",
+            Title = "Need help with invoice",
             Description = "My invoice is showing an incorrect charge for the current billing cycle.",
             Status = TicketStatus.Open,
             Priority = TicketPriority.Medium,
@@ -135,8 +133,8 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             OrganizationId = org.Id,
             CategoryId = category.Id,
             CreatedAtUtc = DateTime.UtcNow,
-            FirstResponseDueUtc = DateTime.UtcNow.AddHours(8),
-            ResolutionDueUtc = DateTime.UtcNow.AddHours(24)
+            FirstResponseDueAtUtc = DateTime.UtcNow.AddHours(8),
+            ResolutionDueAtUtc = DateTime.UtcNow.AddHours(24)
         };
         db.Tickets.Add(ticket);
 
