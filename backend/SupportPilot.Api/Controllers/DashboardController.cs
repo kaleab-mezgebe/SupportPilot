@@ -31,7 +31,13 @@ public class DashboardController : ControllerBase
             .Select(t => (t.FirstResponseAtUtc!.Value - t.CreatedAtUtc).TotalMinutes)
             .ToListAsync();
 
-        var avgResponseTime = responseTimes.Count > 0 ? (int)Math.Round(responseTimes.Average()) : 18;
+        var avgResponseTime = responseTimes.Count > 0 ? (int)Math.Round(responseTimes.Average()) : 0;
+
+        // Real CSAT calculation from database
+        var csatSurveys = await _dbContext.CsatSurveys.ToListAsync();
+        var csatSatisfactionRate = csatSurveys.Count > 0
+            ? (int)Math.Round((double)csatSurveys.Count(s => s.Rating >= 4) / csatSurveys.Count * 100)
+            : 0;
 
         var recentTicketEntities = await _dbContext.Tickets
             .Include(t => t.Category)
@@ -69,7 +75,7 @@ public class DashboardController : ControllerBase
             InProgressTickets: inProgressTickets,
             ResolvedTickets: resolvedTickets,
             AvgResponseTimeMinutes: avgResponseTime,
-            CustomerSatisfactionRate: 98,
+            CustomerSatisfactionRate: csatSatisfactionRate,
             RecentTickets: recentTickets
         );
 
@@ -88,14 +94,14 @@ public class DashboardController : ControllerBase
         if (surveys.Count == 0)
         {
             return Ok(new CsatMetricsDto(
-                AverageRating: 4.8,
+                AverageRating: 0.0,
                 TotalResponses: 0,
-                SatisfactionPercentage: 96.0,
+                SatisfactionPercentage: 0.0,
                 RatingDistribution: new Dictionary<string, int>
                 {
-                    { "5", 18 },
-                    { "4", 5 },
-                    { "3", 1 },
+                    { "5", 0 },
+                    { "4", 0 },
+                    { "3", 0 },
                     { "2", 0 },
                     { "1", 0 }
                 },
@@ -133,6 +139,89 @@ public class DashboardController : ControllerBase
             SatisfactionPercentage: satisfactionPct,
             RatingDistribution: distribution,
             RecentFeedback: recent
+        ));
+    }
+
+    [HttpGet("analytics")]
+    public async Task<ActionResult<AnalyticsOverviewDto>> GetAnalyticsOverview()
+    {
+        var totalTickets = await _dbContext.Tickets.CountAsync();
+        var now = DateTime.UtcNow;
+
+        // 1. Response Times
+        var responseMinutes = await _dbContext.Tickets
+            .Where(t => t.FirstResponseAtUtc != null)
+            .Select(t => (t.FirstResponseAtUtc!.Value - t.CreatedAtUtc).TotalMinutes)
+            .ToListAsync();
+
+        var avgMinutes = responseMinutes.Count > 0 ? (int)Math.Round(responseMinutes.Average()) : 0;
+        var formattedResponse = avgMinutes >= 60 
+            ? $"{avgMinutes / 60}h {avgMinutes % 60}m" 
+            : avgMinutes > 0 
+                ? $"{avgMinutes}m" 
+                : "< 1m";
+
+        // 2. SLA Compliance Rate
+        var breachedCount = await _dbContext.Tickets
+            .CountAsync(t => t.IsSlaBreached || (t.ResolutionDueAtUtc != null && t.ResolutionDueAtUtc < now && t.ResolvedAtUtc == null));
+        
+        var slaComplianceRate = totalTickets > 0 
+            ? Math.Round((double)(totalTickets - breachedCount) / totalTickets * 100, 1) 
+            : 100.0;
+
+        // 3. CSAT Metrics
+        var surveys = await _dbContext.CsatSurveys.ToListAsync();
+        var avgCsat = surveys.Count > 0 ? Math.Round(surveys.Average(s => s.Rating), 1) : 0.0;
+        var csatPct = surveys.Count > 0 ? Math.Round((double)surveys.Count(s => s.Rating >= 4) / surveys.Count * 100, 1) : 0.0;
+
+        // 4. AI Deflection Rate
+        var totalMessages = await _dbContext.TicketMessages.CountAsync();
+        var aiMessages = await _dbContext.TicketMessages.CountAsync(m => m.IsAiGenerated);
+        var aiDeflectionRate = totalMessages > 0 ? Math.Round((double)aiMessages / totalMessages * 100, 1) : 0.0;
+
+        // 5. Category Breakdown
+        var categories = await _dbContext.TicketCategories.ToListAsync();
+        var ticketsWithCat = await _dbContext.Tickets.Include(t => t.Category).ToListAsync();
+
+        var categoryMetrics = categories.Select(c =>
+        {
+            var count = ticketsWithCat.Count(t => t.CategoryId == c.Id);
+            var pct = totalTickets > 0 ? Math.Round((double)count / totalTickets * 100, 1) : 0.0;
+            return new CategoryMetricDto(
+                Name: c.Name,
+                Count: count,
+                Percentage: pct,
+                ColorHex: c.ColorHex
+            );
+        }).OrderByDescending(c => c.Count).ToList();
+
+        // 6. Recent Activity from Audit Logs
+        var rawLogs = await _dbContext.AuditLogs
+            .OrderByDescending(a => a.TimestampUtc)
+            .Take(6)
+            .ToListAsync();
+
+        var userIds = rawLogs.Where(l => l.UserId.HasValue).Select(l => l.UserId!.Value).Distinct().ToList();
+        var usersMap = await _dbContext.Users.Where(u => userIds.Contains(u.Id)).ToDictionaryAsync(u => u.Id, u => u.FullName);
+
+        var recentActivity = rawLogs.Select(l => new AuditLogItemDto(
+            Id: l.Id,
+            Action: l.Action,
+            ActorName: l.UserId.HasValue && usersMap.TryGetValue(l.UserId.Value, out var name) ? name : "System Service",
+            TimestampUtc: l.TimestampUtc
+        )).ToList();
+
+        return Ok(new AnalyticsOverviewDto(
+            AvgFirstResponseFormatted: formattedResponse,
+            AvgFirstResponseMinutes: avgMinutes,
+            SlaComplianceRate: slaComplianceRate,
+            CsatAverageRating: avgCsat,
+            CsatSatisfactionPercentage: csatPct,
+            CsatTotalCount: surveys.Count,
+            AiDeflectionRate: aiDeflectionRate,
+            AiDeflectedCount: aiMessages,
+            CategoryBreakdown: categoryMetrics,
+            RecentActivity: recentActivity
         ));
     }
 }

@@ -201,4 +201,23 @@ public class Sprint9EnhancementTests
         Assert.Equal(100.0, metrics.SatisfactionPercentage);
         Assert.NotEmpty(metrics.RecentFeedback);
     }
+
+    [Fact]
+    public async Task DashboardController_GetAnalyticsOverview_ReturnsRealMetrics()
+    {
+        // Arrange
+        using var context = CreateInMemoryDbContext();
+        var controller = new DashboardController(context);
+
+        // Act
+        var result = await controller.GetAnalyticsOverview();
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var overview = Assert.IsType<AnalyticsOverviewDto>(okResult.Value);
+        Assert.NotNull(overview);
+        Assert.NotNull(overview.CategoryBreakdown);
+        Assert.NotNull(overview.RecentActivity);
+        Assert.NotNull(overview.AvgFirstResponseFormatted);
+    }
 }

@@ -281,3 +281,31 @@ public record IntegrationStatusDto(
     string ActiveLlmProvider,
     DateTime TimestampUtc
 );
+
+// Real Analytics Overview
+public record AnalyticsOverviewDto(
+    string AvgFirstResponseFormatted,
+    int AvgFirstResponseMinutes,
+    double SlaComplianceRate,
+    double CsatAverageRating,
+    double CsatSatisfactionPercentage,
+    int CsatTotalCount,
+    double AiDeflectionRate,
+    int AiDeflectedCount,
+    List<CategoryMetricDto> CategoryBreakdown,
+    List<AuditLogItemDto> RecentActivity
+);
+
+public record CategoryMetricDto(
+    string Name,
+    int Count,
+    double Percentage,
+    string ColorHex
+);
+
+public record AuditLogItemDto(
+    Guid Id,
+    string Action,
+    string ActorName,
+    DateTime TimestampUtc
+);

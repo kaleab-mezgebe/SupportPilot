@@ -12,9 +12,10 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { api } from '../services/api';
-import type { CsatMetrics, IntegrationStatus } from '../types';
+import type { CsatMetrics, IntegrationStatus, AnalyticsOverview } from '../types';
 
 export const AnalyticsPage: React.FC = () => {
+  const [analytics, setAnalytics] = useState<AnalyticsOverview | null>(null);
   const [csatMetrics, setCsatMetrics] = useState<CsatMetrics | null>(null);
   const [integrationStatus, setIntegrationStatus] = useState<IntegrationStatus | null>(null);
 
@@ -26,14 +27,16 @@ export const AnalyticsPage: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [csat, status] = await Promise.all([
+        const [overview, csat, status] = await Promise.all([
+          api.getAnalyticsOverview(),
           api.getCsatMetrics(),
           api.getIntegrationStatus()
         ]);
+        setAnalytics(overview);
         setCsatMetrics(csat);
         setIntegrationStatus(status);
       } catch (err) {
-        console.error('Failed to load analytics:', err);
+        console.error('Failed to load real analytics:', err);
       }
     };
     fetchData();
@@ -59,20 +62,22 @@ export const AnalyticsPage: React.FC = () => {
       <div>
         <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#fff' }}>Support Analytics & Enterprise Integrations</h2>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-          Real-time customer satisfaction (CSAT), SLA compliance rates, and multi-channel notification status.
+          Real-time database metrics: resolution times, SLA compliance, customer satisfaction (CSAT), and multi-channel connectors.
         </p>
       </div>
 
-      {/* Highlights Grid */}
+      {/* Highlights Grid (100% Real Database Calculations) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
         <div className="glass-panel" style={{ padding: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', marginBottom: '12px' }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>First Response Time</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Avg First Response Time</span>
             <Clock size={18} color="var(--accent-primary)" />
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#fff' }}>14m 20s</div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#fff' }}>
+            {analytics?.avgFirstResponseFormatted || '< 1m'}
+          </div>
           <div style={{ fontSize: '0.78rem', color: 'var(--accent-success)', marginTop: '8px' }}>
-            ↓ 35% faster vs previous cycle
+            Computed from active ticket timestamps
           </div>
         </div>
 
@@ -81,7 +86,9 @@ export const AnalyticsPage: React.FC = () => {
             <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>SLA Compliance Rate</span>
             <Award size={18} color="var(--accent-secondary)" />
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#fff' }}>99.2%</div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#fff' }}>
+            {analytics ? `${analytics.slaComplianceRate}%` : '100%'}
+          </div>
           <div style={{ fontSize: '0.78rem', color: 'var(--accent-secondary)', marginTop: '8px' }}>
             Target: &gt; 95.0%
           </div>
@@ -93,10 +100,10 @@ export const AnalyticsPage: React.FC = () => {
             <ThumbsUp size={18} color="var(--accent-success)" />
           </div>
           <div style={{ fontSize: '2rem', fontWeight: 800, color: '#fff' }}>
-            {csatMetrics ? `${csatMetrics.averageRating} / 5.0` : '4.9 / 5.0'}
+            {analytics?.csatAverageRating ? `${analytics.csatAverageRating} / 5.0` : 'No ratings yet'}
           </div>
           <div style={{ fontSize: '0.78rem', color: 'var(--accent-success)', marginTop: '8px' }}>
-            {csatMetrics ? `${csatMetrics.satisfactionPercentage}% positive (${csatMetrics.totalResponses} ratings)` : 'Based on 86 customer ratings'}
+            {analytics ? `${analytics.csatSatisfactionPercentage}% positive (${analytics.csatTotalCount} ratings)` : '0 verified ratings'}
           </div>
         </div>
 
@@ -105,14 +112,55 @@ export const AnalyticsPage: React.FC = () => {
             <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>AI Deflection Rate</span>
             <TrendingUp size={18} color="var(--accent-purple)" />
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#fff' }}>42.4%</div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#fff' }}>
+            {analytics ? `${analytics.aiDeflectionRate}%` : '0%'}
+          </div>
           <div style={{ fontSize: '0.78rem', color: 'var(--accent-purple)', marginTop: '8px' }}>
-            60 questions solved autonomously
+            {analytics?.aiDeflectedCount || 0} messages drafted by AI co-pilot
           </div>
         </div>
       </div>
 
-      {/* Sprint 9: CSAT Survey Analytics & Breakdown */}
+      {/* Real Category Breakdown & Real Activity Log */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+        <div className="glass-panel" style={{ padding: '24px' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff', marginBottom: '16px' }}>
+            Live Ticket Category Distribution
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {(analytics?.categoryBreakdown || []).map(cat => (
+              <div key={cat.name}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.825rem', marginBottom: '6px' }}>
+                  <span style={{ color: 'var(--text-main)', fontWeight: 500 }}>{cat.name}</span>
+                  <span style={{ color: 'var(--text-muted)' }}>{cat.count} ({cat.percentage}%)</span>
+                </div>
+                <div style={{ height: '8px', borderRadius: '4px', background: 'rgba(255, 255, 255, 0.05)', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${cat.percentage}%`, background: cat.colorHex, borderRadius: '4px', transition: 'width 0.3s' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="glass-panel" style={{ padding: '24px' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff', marginBottom: '16px' }}>
+            Real Security & Activity Audit Trail
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {(analytics?.recentActivity || []).map(log => (
+              <div key={log.id} style={{ padding: '10px 14px', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)', fontSize: '0.8rem' }}>
+                <div style={{ color: 'var(--text-main)', fontWeight: 500 }}>{log.action}</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-dim)', fontSize: '0.75rem', marginTop: '4px' }}>
+                  <span>Actor: {log.actorName}</span>
+                  <span>{new Date(log.timestampUtc).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* CSAT Survey Analytics & Multi-Channel Integrations Hub */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
         <div className="glass-panel" style={{ padding: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -120,14 +168,14 @@ export const AnalyticsPage: React.FC = () => {
               <Star size={18} color="#eab308" fill="#eab308" /> Customer Satisfaction Breakdown
             </h3>
             <span style={{ fontSize: '0.8rem', color: 'var(--accent-success)', fontWeight: 600, background: 'rgba(16, 185, 129, 0.1)', padding: '3px 8px', borderRadius: '12px' }}>
-              {csatMetrics?.satisfactionPercentage || 98.2}% CSAT Score
+              {csatMetrics?.satisfactionPercentage || 0}% CSAT Score
             </span>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {[5, 4, 3, 2, 1].map(stars => {
-              const count = csatMetrics?.ratingDistribution?.[stars.toString()] || (stars === 5 ? 74 : stars === 4 ? 10 : 2);
-              const total = csatMetrics?.totalResponses || 86;
+              const count = csatMetrics?.ratingDistribution?.[stars.toString()] || 0;
+              const total = csatMetrics?.totalResponses || 0;
               const pct = total > 0 ? Math.round((count / total) * 100) : 0;
 
               return (
@@ -156,7 +204,7 @@ export const AnalyticsPage: React.FC = () => {
 
           <div style={{ marginTop: '24px', borderTop: '1px solid var(--border-subtle)', paddingTop: '16px' }}>
             <h4 style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '12px' }}>
-              Recent Customer Feedback
+              Real Customer Feedback
             </h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {(csatMetrics?.recentFeedback || []).slice(0, 3).map(item => (
@@ -170,7 +218,7 @@ export const AnalyticsPage: React.FC = () => {
                     </div>
                   </div>
                   <p style={{ fontSize: '0.78rem', color: 'var(--text-dim)', margin: 0, fontStyle: 'italic' }}>
-                    "{item.feedbackComment || 'No additional comment provided.'}"
+                    "{item.feedbackComment || 'No feedback text provided.'}"
                   </p>
                 </div>
               ))}

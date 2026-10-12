@@ -158,3 +158,30 @@ export interface InboundEmailResult {
   message: string;
 }
 
+export interface CategoryMetric {
+  name: string;
+  count: number;
+  percentage: number;
+  colorHex: string;
+}
+
+export interface AuditLogItem {
+  id: string;
+  action: string;
+  actorName: string;
+  timestampUtc: string;
+}
+
+export interface AnalyticsOverview {
+  avgFirstResponseFormatted: string;
+  avgFirstResponseMinutes: number;
+  slaComplianceRate: number;
+  csatAverageRating: number;
+  csatSatisfactionPercentage: number;
+  csatTotalCount: number;
+  aiDeflectionRate: number;
+  aiDeflectedCount: number;
+  categoryBreakdown: CategoryMetric[];
+  recentActivity: AuditLogItem[];
+}
+
