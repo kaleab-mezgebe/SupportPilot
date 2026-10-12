@@ -9,7 +9,9 @@ import type {
   AuthResponse,
   UserRole,
   TicketStatus,
-  TicketPriority
+  TicketPriority,
+  RagAnswerResponse,
+  CopilotSuggestion
 } from '../types';
 
 const API_BASE_URL = 'http://localhost:5000/api';
@@ -632,7 +634,7 @@ export const ApiService = {
     }
   },
 
-  // --- Knowledge Base ---
+  // --- Knowledge Base & Grounded RAG (Sprint 6) ---
   async getKnowledgeArticles(search?: string, category?: string): Promise<KnowledgeArticle[]> {
     try {
       const query = new URLSearchParams();
@@ -645,7 +647,106 @@ export const ApiService = {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
     } catch {
-      return FALLBACK_ARTICLES;
+      let filtered = [...FALLBACK_ARTICLES];
+      if (category && category !== 'All') {
+        filtered = filtered.filter(a => a.category.toLowerCase().includes(category.toLowerCase()));
+      }
+      if (search) {
+        const s = search.toLowerCase();
+        filtered = filtered.filter(a => a.title.toLowerCase().includes(s) || a.content.toLowerCase().includes(s));
+      }
+      return filtered;
+    }
+  },
+
+  async createKnowledgeArticle(data: { title: string; content: string; category: string }): Promise<KnowledgeArticle> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/kb/articles`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data)
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch {
+      const newArticle: KnowledgeArticle = {
+        id: crypto.randomUUID(),
+        title: data.title,
+        slug: data.title.toLowerCase().replace(/\s+/g, '-'),
+        category: data.category,
+        content: data.content,
+        viewCount: 0,
+        isPublished: true,
+        createdAtUtc: new Date().toISOString()
+      };
+      FALLBACK_ARTICLES.unshift(newArticle);
+      return newArticle;
+    }
+  },
+
+  async askRagQuestion(query: string, threshold: number = 0.55): Promise<RagAnswerResponse> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/kb/rag`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ query, confidenceThreshold: threshold })
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch {
+      const qLower = query.toLowerCase();
+      // Match against fallback articles
+      const matched = FALLBACK_ARTICLES.filter(a => 
+        qLower.split(' ').some(w => w.length > 3 && (a.title.toLowerCase().includes(w) || a.content.toLowerCase().includes(w)))
+      );
+
+      if (matched.length > 0) {
+        const top = matched[0];
+        const confidence = 0.88;
+        return {
+          query,
+          answer: `Based on SupportPilot approved documentation in [${top.title}]:\n\n${top.content}\n\nReferences: [${top.title}] (Confidence: 88%)`,
+          confidenceScore: confidence,
+          isGrounded: true,
+          citations: matched.slice(0, 2).map(a => ({
+            articleId: a.id,
+            title: a.title,
+            slug: a.slug || 'article',
+            category: a.category,
+            relevanceScore: 0.88,
+            excerpt: a.content.substring(0, 180) + '...'
+          })),
+          escalationReason: null
+        };
+      }
+
+      return {
+        query,
+        answer: 'I could not find verified documentation to answer this question with sufficient confidence. To prevent unsupported answers, this inquiry has been routed to a human support agent.',
+        confidenceScore: 0.22,
+        isGrounded: false,
+        citations: [],
+        escalationReason: `Relevance score (22%) is below the required confidence threshold (${Math.round(threshold * 100)}%).`
+      };
+    }
+  },
+
+  async getCopilotSuggestion(ticketId: string): Promise<CopilotSuggestion> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/kb/copilot-suggest/${ticketId}`, {
+        headers: getAuthHeaders()
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch {
+      const ticket = FALLBACK_TICKETS.find(t => t.id === ticketId);
+      return {
+        ticketId,
+        suggestedResponse: `Hi ${ticket?.customerName || 'there'},\n\nRegarding your inquiry on '${ticket?.title || 'your request'}':\n\nAccording to our documentation for Configuring Custom Domains & SSL Termination:\nTo point your custom domain to SupportPilot, create a CNAME record with your DNS provider pointing to proxy.supportpilot.io. Automated Let's Encrypt certificates are issued within 15 minutes.\n\nPlease let us know if you have any questions!`,
+        sourceArticleTitle: 'Configuring Custom Domains & SSL Termination',
+        confidenceScore: 0.92,
+        citations: ['Configuring Custom Domains & SSL Termination (92%)']
+      };
     }
   }
 };

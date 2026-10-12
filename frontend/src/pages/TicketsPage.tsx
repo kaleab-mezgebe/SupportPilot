@@ -279,9 +279,18 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
     }
   };
 
-  const handleApplyAiSuggestion = () => {
-    setReplyMode('ai');
-    setReplyText('Based on our documentation for Custom Domain Setup (KB-101), verify that your authoritative CNAME points to proxy.supportpilot.io with TTL <= 300s. We have re-queued the SSL challenge.');
+  const [isGeneratingSuggestion, setIsGeneratingSuggestion] = useState(false);
+
+  const handleApplyAiSuggestion = async () => {
+    if (!selectedTicketId) return;
+    setIsGeneratingSuggestion(true);
+    try {
+      const suggestion = await ApiService.getCopilotSuggestion(selectedTicketId);
+      setReplyMode('ai');
+      setReplyText(suggestion.suggestedResponse);
+    } finally {
+      setIsGeneratingSuggestion(false);
+    }
   };
 
   return (
@@ -867,6 +876,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
                 {/* AI Co-Pilot Assistant Action */}
                 <button
                   onClick={handleApplyAiSuggestion}
+                  disabled={isGeneratingSuggestion}
                   style={{
                     background: 'transparent',
                     border: '1px solid rgba(99, 102, 241, 0.3)',
@@ -881,7 +891,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
                   }}
                 >
                   <Sparkles size={13} />
-                  <span>Insert Grounded AI Suggestion</span>
+                  <span>{isGeneratingSuggestion ? 'Retrieving Grounded KB...' : 'Insert Grounded AI Suggestion'}</span>
                 </button>
               </div>
 

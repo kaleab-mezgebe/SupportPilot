@@ -95,3 +95,31 @@ export interface KnowledgeArticle {
   createdAtUtc?: string;
   updatedAtUtc?: string | null;
 }
+
+// Sprint 6: RAG & Semantic Types
+export interface RagCitation {
+  articleId: string;
+  title: string;
+  slug: string;
+  category: string;
+  relevanceScore: number;
+  excerpt: string;
+}
+
+export interface RagAnswerResponse {
+  query: string;
+  answer: string;
+  confidenceScore: number;
+  isGrounded: boolean;
+  citations: RagCitation[];
+  escalationReason?: string | null;
+}
+
+export interface CopilotSuggestion {
+  ticketId: string;
+  suggestedResponse: string;
+  sourceArticleTitle: string;
+  confidenceScore: number;
+  citations: string[];
+}
+

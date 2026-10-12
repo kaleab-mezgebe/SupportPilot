@@ -183,3 +183,44 @@ public record CreateKnowledgeArticleRequest(
     string Category,
     bool IsPublished = true
 );
+
+// --- Sprint 6: RAG & Semantic Search DTOs ---
+public record RagQueryRequest(
+    string Query,
+    double ConfidenceThreshold = 0.55
+);
+
+public record RagCitationDto(
+    Guid ArticleId,
+    string Title,
+    string Slug,
+    string Category,
+    double RelevanceScore,
+    string Excerpt
+);
+
+public record RagAnswerDto(
+    string Query,
+    string Answer,
+    double ConfidenceScore,
+    bool IsGrounded,
+    List<RagCitationDto> Citations,
+    string? EscalationReason
+);
+
+public record SemanticSearchArticleDto(
+    Guid Id,
+    string Title,
+    string Slug,
+    string Category,
+    string Excerpt,
+    double RelevanceScore
+);
+
+public record CopilotSuggestionDto(
+    Guid TicketId,
+    string SuggestedResponse,
+    string SourceArticleTitle,
+    double ConfidenceScore,
+    List<string> Citations
+);

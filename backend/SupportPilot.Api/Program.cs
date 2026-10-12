@@ -15,6 +15,8 @@ builder.Services.AddEndpointsApiExplorer();
 // Dependency Injection
 builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
+builder.Services.AddScoped<ISemanticSearchService, SemanticSearchService>();
+builder.Services.AddScoped<IGroundedRagService, GroundedRagService>();
 
 // Configure JWT Bearer Authentication
 var jwtSecretKey = builder.Configuration["Jwt:Key"] ?? "SupportPilot_Super_Secret_Key_For_Jwt_Auth_2026_Minimum_32_Bytes_Long!";

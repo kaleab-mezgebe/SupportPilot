@@ -120,6 +120,21 @@ public class KnowledgeArticle
     public int ViewCount { get; set; } = 0;
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAtUtc { get; set; }
+
+    // Sprint 6: Vector Embeddings
+    public string? EmbeddingJson { get; set; }
+
+    public float[]? GetEmbedding()
+    {
+        if (string.IsNullOrEmpty(EmbeddingJson)) return null;
+        try { return System.Text.Json.JsonSerializer.Deserialize<float[]>(EmbeddingJson); }
+        catch { return null; }
+    }
+
+    public void SetEmbedding(float[] vector)
+    {
+        EmbeddingJson = System.Text.Json.JsonSerializer.Serialize(vector);
+    }
 }
 
 public class AuditLog
