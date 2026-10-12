@@ -13,6 +13,7 @@ import {
   Check
 } from 'lucide-react';
 import { ApiService } from '../services/api';
+import { RealtimeService } from '../services/signalr';
 import type { 
   Ticket, 
   TicketDetail, 
@@ -84,6 +85,26 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
       ApiService.getTicketDetail(selectedTicketId).then(detail => {
         setTicketDetail(detail);
       });
+
+      RealtimeService.joinTicket(selectedTicketId);
+
+      const unsub = RealtimeService.onMessage((msg) => {
+        if (msg.ticketId === selectedTicketId) {
+          setTicketDetail(prev => {
+            if (!prev) return prev;
+            if (prev.messages.some(m => m.id === msg.id)) return prev;
+            return {
+              ...prev,
+              messages: [...prev.messages, msg]
+            };
+          });
+        }
+      });
+
+      return () => {
+        RealtimeService.leaveTicket(selectedTicketId);
+        unsub();
+      };
     }
   }, [selectedTicketId]);
 

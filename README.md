@@ -99,5 +99,5 @@ dotnet test
 - **Sprint 3–4 (Ticketing MVP)**: ✅ Customer submission, queue assignment, message threads, internal notes, status transitions.
 - **Sprint 5 (Support Workspace)**: ✅ Filtering, sorting, bulk triage panels, SLA timers & countdown indicators.
 - **Sprint 6 (Knowledge Base & AI)**: ✅ Grounded article search, vector embeddings, generative AI answers, fallback escalation.
-- **Sprint 7 (Real-time Hub)**: 🔄 SignalR live chat, real-time notifications, agent presence.
-- **Sprint 8 (Hardening & Launch)**: 📅 Performance tuning, automated CI/CD, Docker deployment.
+- **Sprint 7 (Real-time Hub)**: ✅ SignalR live chat, real-time notifications, agent presence, typing indicators.
+- **Sprint 8 (Hardening & Launch)**: 🔄 Performance tuning, automated CI/CD, Docker deployment.
