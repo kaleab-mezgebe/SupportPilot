@@ -41,3 +41,8 @@ SupportPilot is designed as a modular monolith SaaS platform utilizing modern cl
 - **TicketMessage**: Thread replies supporting agent, customer, internal notes, and AI co-pilot tags.
 - **KnowledgeArticle**: Approved company documentation used to ground AI responses.
 - **AuditLog**: Immutable action history for security and compliance tracking.
+
+---
+
+## 📚 Learning & Concepts Guide
+For a beginner-friendly deep dive into controllers, ORM, DTOs, JWT authentication, SignalR, pgvector, and DI, read the [Backend Concepts Guide](file:///Users/kaleabmezgebe/Desktop/personal%20projects/SupportPilot/docs/backend_concepts_guide.md).

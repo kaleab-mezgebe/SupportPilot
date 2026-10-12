@@ -90,6 +90,8 @@ dotnet test
 - **Containerization**: Docker & Docker Compose
 - **Testing**: xUnit, FluentAssertions
 
+> 📖 **New to the backend?** Read the beginner-friendly [Backend Concepts Guide](docs/backend_concepts_guide.md) explaining how ASP.NET Core, EF Core, JWT auth, SignalR, pgvector, and Dependency Injection work together.
+
 ---
 
 ## 🎯 Product Delivery Plan
