@@ -139,20 +139,21 @@ export const ChatPage: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '24px', height: 'calc(100vh - 140px)' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '24px', height: 'calc(100vh - 130px)' }}>
       {/* Left Column: Real-Time Channels & Active Sessions */}
-      <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-        <div style={{ padding: '20px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="editorial-card" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+        <div style={{ padding: '20px 22px', borderBottom: '1px solid var(--color-border-tertiary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--color-surface-light)' }}>
           <div>
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#fff' }}>Live Channels</h2>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>WebSocket Real-time Sessions</div>
+            <h2 style={{ fontSize: '1.2rem', fontFamily: 'var(--font-serif)', color: 'var(--color-content-primary)' }}>Live Channels</h2>
+            <div style={{ fontSize: '0.72rem', color: 'var(--color-content-secondary)' }}>SignalR Real-time Hub</div>
           </div>
 
           {/* Connection Status Pill */}
           <div className="badge" style={{
-            fontSize: '0.65rem',
-            background: connectionStatus === 'Connected' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-            color: connectionStatus === 'Connected' ? '#34d399' : '#f87171'
+            fontSize: '0.68rem',
+            backgroundColor: connectionStatus === 'Connected' ? 'var(--color-highlight-green)' : 'var(--color-highlight-coral)',
+            borderColor: connectionStatus === 'Connected' ? 'rgba(82, 154, 106, 0.3)' : 'rgba(235, 91, 85, 0.4)',
+            color: connectionStatus === 'Connected' ? '#15803d' : '#b91c1c'
           }}>
             {connectionStatus === 'Connected' ? (
               <>
@@ -178,11 +179,11 @@ export const ChatPage: React.FC = () => {
                 onClick={() => setActiveTicket(t)}
                 style={{
                   padding: '14px 18px',
-                  borderBottom: '1px solid var(--border-subtle)',
-                  background: isSelected ? 'rgba(99, 102, 241, 0.12)' : 'transparent',
-                  borderLeft: isSelected ? '3px solid var(--accent-primary)' : '3px solid transparent',
+                  borderBottom: '1px solid var(--color-border-tertiary)',
+                  backgroundColor: isSelected ? 'var(--color-surface-dim)' : 'var(--color-surface-neutral)',
+                  borderLeft: isSelected ? '3px solid var(--color-border-primary)' : '3px solid transparent',
                   cursor: 'pointer',
-                  transition: 'background 0.15s ease'
+                  transition: 'background-color 0.15s ease'
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
@@ -192,20 +193,19 @@ export const ChatPage: React.FC = () => {
                         width: '7px', 
                         height: '7px', 
                         borderRadius: '50%', 
-                        background: isOnline ? 'var(--accent-success)' : 'var(--text-dim)',
-                        boxShadow: isOnline ? '0 0 6px var(--accent-success)' : 'none'
+                        backgroundColor: isOnline ? '#15803d' : 'var(--color-content-tertiary)'
                       }} 
                     />
-                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#fff' }}>
+                    <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--color-content-primary)' }}>
                       {t.customerName}
                     </span>
                   </div>
-                  <span style={{ fontSize: '0.68rem', fontFamily: 'JetBrains Mono', color: 'var(--accent-primary)' }}>
+                  <span className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--color-content-secondary)' }}>
                     {t.ticketReference}
                   </span>
                 </div>
 
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{ fontSize: '0.76rem', color: 'var(--color-content-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {t.title}
                 </div>
               </div>
@@ -215,22 +215,22 @@ export const ChatPage: React.FC = () => {
       </div>
 
       {/* Right Column: Live Chat Canvas */}
-      <div className="glass-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div className="editorial-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {activeTicket ? (
           <>
             {/* Header info strip */}
-            <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255, 255, 255, 0.01)' }}>
+            <div style={{ padding: '18px 26px', borderBottom: '1px solid var(--color-border-tertiary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--color-surface-light)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'linear-gradient(135deg, #06b6d4, #3b82f6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: '0.85rem' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: 'var(--color-surface-intro)', border: '1px solid var(--color-border-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--color-content-primary)', fontSize: '0.82rem', fontFamily: 'var(--font-mono)' }}>
                   {activeTicket.customerName.slice(0, 2).toUpperCase()}
                 </div>
                 <div>
-                  <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ fontWeight: 700, color: 'var(--color-content-primary)', fontSize: '0.98rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     {activeTicket.customerName}
-                    <span className="badge badge-sla-ok" style={{ fontSize: '0.6rem' }}>Online Presence Active</span>
+                    <span className="badge badge-sla-ok" style={{ fontSize: '0.62rem' }}>Presence Active</span>
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    Session {activeTicket.ticketReference} • {activeTicket.title}
+                  <div style={{ fontSize: '0.76rem', color: 'var(--color-content-secondary)' }}>
+                    <span className="font-mono">{activeTicket.ticketReference}</span> • {activeTicket.title}
                   </div>
                 </div>
               </div>
@@ -238,32 +238,25 @@ export const ChatPage: React.FC = () => {
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <button
                   onClick={handleAiDeflectionTakeover}
+                  className="btn-secondary"
                   style={{
-                    background: 'rgba(99, 102, 241, 0.15)',
-                    border: '1px solid rgba(99, 102, 241, 0.3)',
-                    color: 'var(--accent-secondary)',
-                    borderRadius: '8px',
-                    padding: '6px 12px',
+                    padding: '6px 14px',
                     fontSize: '0.75rem',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
+                    borderRadius: '9999px'
                   }}
                 >
-                  <Sparkles size={13} />
+                  <Sparkles size={13} color="var(--color-brand-purple)" />
                   <span>AI Co-Pilot Takeover</span>
                 </button>
 
                 <span className={`badge badge-${activeTicket.priority.toLowerCase()}`} style={{ fontSize: '0.65rem' }}>
-                  {activeTicket.priority} Priority
+                  {activeTicket.priority}
                 </span>
               </div>
             </div>
 
             {/* Live Message Feed */}
-            <div style={{ flex: 1, padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ flex: 1, padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px', backgroundColor: 'var(--color-surface-primary)' }}>
               {messages.map((m) => {
                 const isCustomer = m.senderRole === 'Customer';
                 const isAi = m.isAiGenerated;
@@ -274,33 +267,36 @@ export const ChatPage: React.FC = () => {
                     key={m.id}
                     style={{
                       alignSelf: isCustomer ? 'flex-start' : 'flex-end',
-                      maxWidth: '78%',
+                      maxWidth: '75%',
                       padding: '14px 18px',
-                      borderRadius: '12px',
-                      background: isInternal
-                        ? 'rgba(234, 179, 8, 0.12)'
+                      borderRadius: 'var(--radius-s)',
+                      backgroundColor: isInternal
+                        ? 'var(--color-highlight-yellow)'
                         : isAi 
-                          ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(6, 182, 212, 0.15) 100%)'
+                          ? 'var(--color-highlight-purple)'
                           : isCustomer 
-                            ? 'rgba(255, 255, 255, 0.04)' 
-                            : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                            ? 'var(--color-surface-neutral)' 
+                            : 'var(--color-surface-inverted)',
                       border: isInternal
-                        ? '1px dashed rgba(234, 179, 8, 0.4)'
+                        ? '1px dashed #d97706'
                         : isAi 
-                          ? '1px solid rgba(99, 102, 241, 0.4)' 
-                          : '1px solid var(--border-subtle)',
-                      color: '#fff'
+                          ? '1px solid rgba(196, 85, 235, 0.35)' 
+                          : isCustomer
+                            ? '1px solid var(--color-border-tertiary)'
+                            : '1px solid var(--color-surface-inverted-2)',
+                      color: !isCustomer && !isInternal && !isAi ? '#ffffff' : 'var(--color-content-primary)',
+                      boxShadow: 'var(--shadow-sm)'
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '6px', fontSize: '0.72rem', color: 'rgba(255, 255, 255, 0.7)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '6px', fontSize: '0.72rem', opacity: 0.8 }}>
                       <span style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
                         {isAi && <Sparkles size={12} />}
                         {m.senderName}
                       </span>
-                      <span>{new Date(m.createdAtUtc).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span className="font-mono">{new Date(m.createdAtUtc).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
 
-                    <div style={{ fontSize: '0.88rem', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                    <div style={{ fontSize: '0.88rem', lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>
                       {m.content}
                     </div>
                   </div>
@@ -309,7 +305,7 @@ export const ChatPage: React.FC = () => {
 
               {/* Live Remote Typing Indicator */}
               {remoteTypingUser && (
-                <div style={{ alignSelf: 'flex-start', padding: '8px 14px', borderRadius: '10px', background: 'rgba(255, 255, 255, 0.04)', fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ alignSelf: 'flex-start', padding: '6px 14px', borderRadius: '9999px', backgroundColor: 'var(--color-surface-neutral)', border: '1px solid var(--color-border-tertiary)', fontSize: '0.75rem', color: 'var(--color-content-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <span className="pulse-dot" style={{ width: '6px', height: '6px' }} />
                   <span>{remoteTypingUser} is typing...</span>
                 </div>
@@ -319,7 +315,7 @@ export const ChatPage: React.FC = () => {
             </div>
 
             {/* Real-Time Composer Bar */}
-            <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border-subtle)', background: 'rgba(15, 23, 42, 0.7)', display: 'flex', gap: '12px' }}>
+            <div style={{ padding: '16px 24px', borderTop: '1px solid var(--color-border-tertiary)', backgroundColor: 'var(--color-surface-light)', display: 'flex', gap: '12px' }}>
               <input 
                 type="text" 
                 placeholder="Type a real-time message (broadcasts live via SignalR)..."
@@ -327,23 +323,23 @@ export const ChatPage: React.FC = () => {
                 onChange={handleInputChange}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 className="input-field"
-                style={{ flex: 1 }}
+                style={{ flex: 1, borderRadius: '9999px' }}
               />
               <button 
                 disabled={!input.trim()} 
                 onClick={handleSend} 
                 className="btn-primary" 
-                style={{ padding: '0 20px' }}
+                style={{ padding: '0 22px', borderRadius: '9999px' }}
               >
-                <Send size={15} />
+                <Send size={14} />
                 <span>Send</span>
               </button>
             </div>
           </>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)', gap: '10px' }}>
-            <MessageCircle size={36} color="var(--border-subtle)" />
-            <div>Select a live channel session to start communicating</div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--color-content-tertiary)', gap: '10px' }}>
+            <MessageCircle size={36} color="var(--color-border-tertiary)" />
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: '1.1rem' }}>Select a live channel session to start communicating</div>
           </div>
         )}
       </div>

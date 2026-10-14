@@ -1,29 +1,80 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,300;1,9..144,400;1,9..144,500&family=Manrope:wght@300;400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,300;1,6..72,400&display=swap');
+
+/* ==========================================================================
+   ELLIPSUS DESIGN SYSTEM (https://ellipsus.com/#introduction)
+   High-craft editorial typography, warm stone surfaces, crisp hairlines,
+   refined obsidian buttons, and signature pastel accents.
+   ========================================================================== */
 
 :root {
-  --bg-primary: #0a0d14;
-  --bg-secondary: #0f172a;
-  --bg-tertiary: #1e293b;
-  --bg-card: rgba(15, 23, 42, 0.75);
-  --bg-card-hover: rgba(30, 41, 59, 0.85);
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-focus: rgba(99, 102, 241, 0.4);
+  /* Surface colors */
+  --color-surface-primary: #f4f4f2;       /* Warm stone canvas */
+  --color-surface-light: #f8f8f7;         /* Soft paper off-white */
+  --color-surface-neutral: #ffffff;       /* Crisp white cards */
+  --color-surface-dim: #ecece9;           /* Warm divider & input background */
+  --color-surface-intro: #e5e5e1;         /* Exact background of ellipsus.com/#introduction */
+  --color-surface-inverted: #0c0d0d;      /* Obsidian editorial black */
+  --color-surface-inverted-2: #1d1e20;
+  --color-surface-inverted-raised: #222325;
 
-  --accent-primary: #6366f1;
-  --accent-primary-hover: #4f46e5;
-  --accent-glow: rgba(99, 102, 241, 0.25);
-  --accent-secondary: #06b6d4;
-  --accent-success: #10b981;
-  --accent-warning: #f59e0b;
-  --accent-danger: #ef4444;
-  --accent-purple: #8b5cf6;
+  /* Typography / Content colors */
+  --color-content-primary: #282825;       /* Deep graphite charcoal */
+  --color-content-secondary: #64645e;     /* Refined slate */
+  --color-content-tertiary: #8f8f89;      /* Delicate caption grey */
+  --color-content-disabled: #8f8f89;
+  --color-content-inverted: #ffffff;
 
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --text-dim: #64748b;
+  /* Hairlines and Borders */
+  --color-border-primary: #282825;        /* Crisp black border */
+  --color-border-secondary: #64645e;
+  --color-border-tertiary: #c5c5ba;       /* Signature Ellipsus subtle hairline border */
+  --color-border-disabled: #d5d5cd;
 
+  /* Ellipsus Signature Brand Accents */
+  --color-brand-coral: #eb5b55;
+  --color-brand-purple: #c455eb;
+  --color-brand-blue: #2173be;
+  --color-brand-orange: #f09236;
+  --color-brand-green: #529a6a;
+
+  /* Signature Highlights / Pastel Fills */
+  --color-highlight-coral: #fdeeed;
+  --color-highlight-blue: #e1edfe;
+  --color-highlight-purple: #f6e6fc;
+  --color-highlight-green: #e7f4eb;
+  --color-highlight-orange: #fdeee0;
+  --color-highlight-neutral: #ecece9;
+  --color-highlight-yellow: #fff8bd;
+
+  /* Button Tokens */
+  --button-primary-surface: #0c0d0d;
+  --button-primary-surface-hover: #333438;
+  --button-primary-content: #ffffff;
+  --button-surface: #ffffff;
+  --button-surface-hover: #ecece9;
+  --button-border: #282825;
+  --button-content: #282825;
+
+  /* Fonts */
+  --font-serif: 'Fraunces', 'Newsreader', Georgia, serif;
+  --font-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Courier Prime', 'JetBrains Mono', monospace;
+
+  /* Spacing & Radii */
+  --radius-xs: 4px;
+  --radius-s: 8px;
+  --radius-m: 12px;
+  --radius-l: 16px;
+  --radius-pill: 9999px;
+
+  /* Shadows (tactile & bookish) */
+  --shadow-sm: 0 1px 2px rgba(40, 40, 37, 0.04);
+  --shadow-md: 0 4px 16px rgba(40, 40, 37, 0.06), 0 1px 3px rgba(40, 40, 37, 0.03);
+  --shadow-lg: 0 12px 32px rgba(40, 40, 37, 0.08), 0 2px 6px rgba(40, 40, 37, 0.04);
+
+  /* Layout */
   --sidebar-width: 260px;
-  --header-height: 70px;
+  --header-height: 4.25rem;
 }
 
 * {
@@ -32,54 +83,37 @@
   box-sizing: border-box;
 }
 
-body {
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  background-color: var(--bg-primary);
-  color: var(--text-main);
-  min-height: 100vh;
-  overflow-x: hidden;
+html, body {
+  min-height: 100%;
+  background-color: var(--color-surface-primary);
+  color: var(--color-content-primary);
+  font-family: var(--font-sans);
+  font-size: 15px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-code, pre {
-  font-family: 'JetBrains Mono', monospace;
+code, pre, .font-mono {
+  font-family: var(--font-mono);
 }
 
-/* Glassmorphism Containers */
-.glass-panel {
-  background: var(--bg-card);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border-subtle);
-  border-radius: 16px;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+h1, h2, h3, .font-serif {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  color: var(--color-content-primary);
+  letter-spacing: -0.015em;
 }
 
-.glass-panel:hover {
-  border-color: rgba(255, 255, 255, 0.14);
-}
+/* ==========================================================================
+   APP LAYOUT (Sidebar + Main Viewport)
+   ========================================================================== */
 
-.glow-card {
-  position: relative;
-  overflow: hidden;
-}
-
-.glow-card::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
-  opacity: 0.6;
-}
-
-/* App Layout */
 .app-container {
   display: flex;
   min-height: 100vh;
+  background-color: var(--color-surface-primary);
 }
 
 .main-content {
@@ -88,16 +122,332 @@ code, pre {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  background-color: var(--color-surface-primary);
 }
 
 .page-body {
-  padding: 32px 40px;
+  padding: 36px 48px;
   flex: 1;
-  max-width: 1400px;
+  max-width: 1440px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* ==========================================================================
+   EDITORIAL CARDS & PANELS
+   ========================================================================== */
+
+.glass-panel, .editorial-card {
+  background-color: var(--color-surface-neutral);
+  border: 1px solid var(--color-border-tertiary);
+  border-radius: var(--radius-m);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.glass-panel:hover, .editorial-card:hover {
+  border-color: var(--color-border-secondary);
+  box-shadow: var(--shadow-md);
+}
+
+/* Special Introduction Banner matching ellipsus.com/#introduction */
+.intro-hero-banner {
+  background-color: var(--color-surface-intro);
+  border: 1px solid var(--color-border-tertiary);
+  border-radius: var(--radius-l);
+  padding: 36px 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.intro-hero-title {
+  font-family: var(--font-serif);
+  font-size: 2.75rem;
+  font-weight: 300;
+  line-height: 1.15;
+  color: var(--color-content-primary);
+  margin-bottom: 12px;
+}
+
+.intro-hero-title em {
+  font-style: italic;
+  font-weight: 300;
+}
+
+.intro-hero-subtitle {
+  font-family: var(--font-sans);
+  font-size: 1.05rem;
+  color: var(--color-content-secondary);
+  max-width: 680px;
+  line-height: 1.6;
+}
+
+/* Wiggle / Underline Accent (Signature Ellipsus Feature) */
+.wiggle-accent {
+  position: relative;
+  display: inline-block;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.wiggle-accent::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  width: 100%;
+  height: 6px;
+  background-repeat: repeat-x;
+  background-size: 16px 6px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 6' fill='none'%3E%3Cpath d='M0 3C5 0 5 6 10 3C15 0 15 6 20 3' stroke='%23eb5b55' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+.circle-accent {
+  position: relative;
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  border: 1.5px dashed var(--color-brand-blue);
+  background-color: var(--color-highlight-blue);
+}
+
+/* Blinking Cursor Indicator (|) */
+.blinking-cursor {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-weight: 400;
+  animation: cursorBlink 0.9s infinite;
+  color: var(--color-content-primary);
+  margin-left: 2px;
+}
+
+@keyframes cursorBlink {
+  0%, 49% { opacity: 0; }
+  50%, 100% { opacity: 1; }
+}
+
+/* ==========================================================================
+   BUTTONS (Tactile Editorial Aesthetic)
+   ========================================================================== */
+
+.btn-primary {
+  background-color: var(--button-primary-surface);
+  color: var(--button-primary-content);
+  border: 1px solid var(--button-primary-surface);
+  padding: 9px 18px;
+  border-radius: var(--radius-s);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+  line-height: 1.25;
+}
+
+.btn-primary:hover {
+  background-color: var(--button-primary-surface-hover);
+  border-color: var(--button-primary-surface-hover);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-primary:disabled {
+  background-color: var(--color-surface-dim);
+  color: var(--color-content-disabled);
+  border-color: var(--color-border-tertiary);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  background-color: var(--color-surface-neutral);
+  color: var(--color-content-primary);
+  border: 1px solid var(--color-border-tertiary);
+  padding: 9px 18px;
+  border-radius: var(--radius-s);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+  line-height: 1.25;
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-surface-dim);
+  border-color: var(--color-border-primary);
+  transform: translateY(-1px);
+}
+
+.btn-secondary:active {
+  transform: translateY(0);
+}
+
+.btn-pill {
+  border-radius: var(--radius-pill);
+}
+
+/* ==========================================================================
+   INPUTS & FORMS
+   ========================================================================== */
+
+.input-field {
+  background-color: var(--color-surface-neutral);
+  border: 1px solid var(--color-border-tertiary);
+  color: var(--color-content-primary);
+  padding: 9px 14px;
+  border-radius: var(--radius-s);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   width: 100%;
 }
 
-/* Custom Scrollbars */
+.input-field::placeholder {
+  color: var(--color-content-tertiary);
+}
+
+.input-field:focus {
+  border-color: var(--color-border-primary);
+  box-shadow: 0 0 0 1px var(--color-border-primary);
+}
+
+select.input-field {
+  cursor: pointer;
+  background-color: var(--color-surface-neutral);
+}
+
+/* ==========================================================================
+   BADGES & STATUS PILLS (Ellipsus Color System)
+   ========================================================================== */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+
+.badge-open {
+  background-color: var(--color-highlight-blue);
+  color: var(--color-brand-blue);
+  border-color: rgba(33, 115, 190, 0.25);
+}
+
+.badge-in-progress {
+  background-color: var(--color-highlight-orange);
+  color: #b45309;
+  border-color: rgba(240, 146, 54, 0.3);
+}
+
+.badge-resolved {
+  background-color: var(--color-highlight-green);
+  color: #15803d;
+  border-color: rgba(82, 154, 106, 0.3);
+}
+
+.badge-urgent {
+  background-color: var(--color-highlight-coral);
+  color: #b91c1c;
+  border-color: rgba(235, 91, 85, 0.4);
+}
+
+.badge-high {
+  background-color: var(--color-highlight-orange);
+  color: #c2410c;
+  border-color: rgba(240, 146, 54, 0.35);
+}
+
+.badge-medium {
+  background-color: var(--color-highlight-blue);
+  color: #0369a1;
+  border-color: rgba(33, 115, 190, 0.25);
+}
+
+.badge-low {
+  background-color: var(--color-highlight-neutral);
+  color: var(--color-content-secondary);
+  border-color: var(--color-border-tertiary);
+}
+
+.badge-sla-ok {
+  background-color: var(--color-highlight-green);
+  color: #15803d;
+  border: 1px solid rgba(82, 154, 106, 0.3);
+}
+
+.badge-sla-warning {
+  background-color: var(--color-highlight-orange);
+  color: #b45309;
+  border: 1px solid rgba(240, 146, 54, 0.35);
+}
+
+.badge-sla-breached {
+  background-color: var(--color-highlight-coral);
+  color: #b91c1c;
+  border: 1px solid rgba(235, 91, 85, 0.45);
+}
+
+/* Status Indicator Dot */
+.pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  background-color: var(--color-brand-green);
+  animation: pulseGreen 2.2s infinite ease-in-out;
+}
+
+@keyframes pulseGreen {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.25); opacity: 1; }
+}
+
+/* ==========================================================================
+   BULK TRIAGE & FLOATING BARS
+   ========================================================================== */
+
+.bulk-triage-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background-color: var(--color-surface-inverted);
+  color: var(--color-content-inverted);
+  border: 1px solid var(--color-surface-inverted-2);
+  border-radius: var(--radius-m);
+  box-shadow: var(--shadow-lg);
+  animation: slideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   CUSTOM SCROLLBARS (Hairline & Minimalist)
+   ========================================================================== */
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -108,184 +458,10 @@ code, pre {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--color-border-tertiary);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: var(--color-border-secondary);
 }
-
-/* Buttons & Inputs */
-.btn-primary {
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  padding: 10px 20px;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 0.875rem;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 14px var(--accent-glow);
-}
-
-.btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
-}
-
-.btn-secondary {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-main);
-  border: 1px solid var(--border-subtle);
-  padding: 10px 18px;
-  border-radius: 10px;
-  font-weight: 500;
-  font-size: 0.875rem;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.2s ease;
-}
-
-.btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
-.input-field {
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-main);
-  padding: 10px 14px;
-  border-radius: 10px;
-  font-size: 0.875rem;
-  outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  width: 100%;
-}
-
-.input-field:focus {
-  border-color: var(--accent-primary);
-  box-shadow: 0 0 0 3px var(--accent-glow);
-}
-
-/* Badges */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.025em;
-  text-transform: uppercase;
-}
-
-.badge-open {
-  background: rgba(99, 102, 241, 0.15);
-  color: #818cf8;
-  border: 1px solid rgba(99, 102, 241, 0.3);
-}
-
-.badge-in-progress {
-  background: rgba(245, 158, 11, 0.15);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.3);
-}
-
-.badge-resolved {
-  background: rgba(16, 185, 129, 0.15);
-  color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
-.badge-urgent {
-  background: rgba(239, 68, 68, 0.15);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.3);
-}
-
-.badge-high {
-  background: rgba(249, 115, 22, 0.15);
-  color: #fb923c;
-  border: 1px solid rgba(249, 115, 22, 0.3);
-}
-
-.badge-medium {
-  background: rgba(59, 130, 246, 0.15);
-  color: #60a5fa;
-  border: 1px solid rgba(59, 130, 246, 0.3);
-}
-
-.badge-low {
-  background: rgba(148, 163, 184, 0.15);
-  color: #cbd5e1;
-  border: 1px solid rgba(148, 163, 184, 0.3);
-}
-
-/* Animations */
-@keyframes pulseGlow {
-  0%, 100% { opacity: 0.8; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.05); }
-}
-
-.pulse-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  display: inline-block;
-  background-color: var(--accent-success);
-  box-shadow: 0 0 8px var(--accent-success);
-  animation: pulseGlow 2s infinite ease-in-out;
-}
-
-/* SLA Badges & Indicators (Sprint 5) */
-.badge-sla-ok {
-  background: rgba(16, 185, 129, 0.12);
-  color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
-.badge-sla-warning {
-  background: rgba(245, 158, 11, 0.15);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.4);
-}
-
-.badge-sla-breached {
-  background: rgba(239, 68, 68, 0.18);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.5);
-  animation: pulseBreach 1.8s infinite ease-in-out;
-}
-
-@keyframes pulseBreach {
-  0%, 100% { box-shadow: 0 0 0 rgba(239, 68, 68, 0); }
-  50% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.35); }
-}
-
-/* Bulk Triage Bar (Sprint 5) */
-.bulk-triage-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 16px;
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98));
-  border: 1px solid var(--accent-primary);
-  border-radius: 12px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(99, 102, 241, 0.25);
-  animation: slideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-

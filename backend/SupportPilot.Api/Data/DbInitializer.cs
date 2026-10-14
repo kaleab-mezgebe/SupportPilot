@@ -49,9 +49,14 @@ public static class DbInitializer
 
         foreach (var u in usersToSeed)
         {
-            if (!await context.Users.AnyAsync(existing => existing.Email == u.Email))
+            var existing = await context.Users.FirstOrDefaultAsync(e => e.Email == u.Email);
+            if (existing == null)
             {
                 context.Users.Add(u);
+            }
+            else if (existing.PasswordHash == "hashed_pw")
+            {
+                existing.PasswordHash = defaultPasswordHash;
             }
         }
         await context.SaveChangesAsync();

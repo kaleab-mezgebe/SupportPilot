@@ -40,77 +40,83 @@ export const Header: React.FC<HeaderProps> = ({ onNewTicketClick }) => {
   return (
     <header style={{
       height: 'var(--header-height)',
-      padding: '0 40px',
+      padding: '0 48px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      borderBottom: '1px solid var(--border-subtle)',
-      backgroundColor: 'rgba(15, 23, 42, 0.4)',
-      backdropFilter: 'blur(12px)',
+      borderBottom: '1px solid var(--color-border-tertiary)',
+      backgroundColor: 'var(--color-surface-primary)',
       position: 'sticky',
       top: 0,
       zIndex: 40
     }}>
       {/* Search Bar */}
       <div style={{ position: 'relative', width: '380px' }}>
-        <Search size={16} color="var(--text-dim)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
+        <Search size={15} color="var(--color-content-tertiary)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
         <input 
           type="text" 
           placeholder="Search tickets, articles, customers (⌘ + K)..." 
           className="input-field" 
-          style={{ paddingLeft: '38px', height: '40px', fontSize: '0.85rem' }} 
+          style={{ 
+            paddingLeft: '38px', 
+            height: '38px', 
+            fontSize: '0.85rem',
+            borderRadius: '9999px',
+            backgroundColor: 'var(--color-surface-neutral)'
+          }} 
         />
       </div>
 
       {/* Status & Actions */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
         {/* API Health Pill */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
           padding: '6px 14px',
-          borderRadius: '20px',
-          background: 'rgba(16, 185, 129, 0.1)',
-          border: '1px solid rgba(16, 185, 129, 0.25)',
-          fontSize: '0.75rem',
+          borderRadius: '9999px',
+          backgroundColor: 'var(--color-highlight-green)',
+          border: '1px solid rgba(82, 154, 106, 0.3)',
+          fontSize: '0.78rem',
           fontWeight: 600,
-          color: '#34d399'
+          color: '#15803d'
         }}>
           <span className="pulse-dot" />
-          <span>ASP.NET Core API: {health?.status || 'Online'}</span>
+          <span>API: {health?.status || 'Online'}</span>
           <button 
             onClick={checkStatus} 
             disabled={checking}
             title="Refresh API Health"
-            style={{ background: 'none', border: 'none', color: '#34d399', cursor: 'pointer', display: 'flex' }}
+            style={{ background: 'none', border: 'none', color: '#15803d', cursor: 'pointer', display: 'flex', padding: 0 }}
           >
-            <RefreshCw size={12} />
+            <RefreshCw size={12} style={{ animation: checking ? 'spin 1s linear infinite' : 'none' }} />
           </button>
         </div>
 
         {/* Create Ticket Button */}
         {onNewTicketClick && (
-          <button onClick={onNewTicketClick} className="btn-primary" style={{ padding: '8px 16px', fontSize: '0.825rem' }}>
-            <Plus size={16} />
+          <button onClick={onNewTicketClick} className="btn-primary" style={{ borderRadius: '9999px', padding: '8px 16px', fontSize: '0.825rem' }}>
+            <Plus size={15} />
             <span>New Ticket</span>
           </button>
         )}
 
-        {/* Notifications */}
+        {/* Notifications Icon Button */}
         <button style={{
-          width: '38px',
-          height: '38px',
-          borderRadius: '10px',
-          border: '1px solid var(--border-subtle)',
-          background: 'rgba(255, 255, 255, 0.03)',
-          color: 'var(--text-muted)',
+          width: '36px',
+          height: '36px',
+          borderRadius: '50%',
+          border: '1px solid var(--color-border-tertiary)',
+          backgroundColor: 'var(--color-surface-neutral)',
+          color: 'var(--color-content-secondary)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          cursor: 'pointer'
+          cursor: 'pointer',
+          transition: 'all 0.15s ease'
         }}>
-          <Bell size={18} />
+          <Bell size={16} />
         </button>
 
         {/* User Identity / Persona Switcher */}
@@ -121,54 +127,55 @@ export const Header: React.FC<HeaderProps> = ({ onNewTicketClick }) => {
               display: 'flex',
               alignItems: 'center',
               gap: '10px',
-              padding: '6px 12px',
-              borderRadius: '10px',
-              border: '1px solid var(--border-subtle)',
-              background: 'rgba(255, 255, 255, 0.05)',
-              color: 'var(--text-main)',
-              cursor: 'pointer'
+              padding: '5px 12px',
+              borderRadius: '9999px',
+              border: '1px solid var(--color-border-tertiary)',
+              backgroundColor: 'var(--color-surface-neutral)',
+              color: 'var(--color-content-primary)',
+              cursor: 'pointer',
+              transition: 'border-color 0.15s ease'
             }}
           >
             <div style={{
-              width: '28px',
-              height: '28px',
-              borderRadius: '8px',
-              background: user?.role === 'Customer' ? '#06b6d4' : 'var(--accent-primary)',
+              width: '26px',
+              height: '26px',
+              borderRadius: '50%',
+              backgroundColor: user?.role === 'Customer' ? 'var(--color-brand-blue)' : 'var(--color-surface-inverted)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontWeight: 700,
-              fontSize: '0.75rem',
-              color: '#fff'
+              fontSize: '0.72rem',
+              color: '#ffffff'
             }}>
               {user?.fullName?.charAt(0) || 'U'}
             </div>
             <div style={{ textAlign: 'left', lineHeight: 1.2 }}>
-              <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#fff' }}>
+              <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-content-primary)' }}>
                 {user?.fullName || 'Guest User'}
               </div>
-              <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+              <div style={{ fontSize: '0.68rem', color: 'var(--color-content-tertiary)' }}>
                 {user?.role || 'Viewer'}
               </div>
             </div>
-            <ChevronDown size={14} color="var(--text-dim)" />
+            <ChevronDown size={14} color="var(--color-content-tertiary)" />
           </button>
 
           {isProfileMenuOpen && (
             <div style={{
               position: 'absolute',
               right: 0,
-              top: '46px',
-              width: '240px',
-              background: 'var(--bg-secondary)',
-              border: '1px solid var(--border-focus)',
-              borderRadius: '12px',
+              top: '44px',
+              width: '250px',
+              backgroundColor: 'var(--color-surface-neutral)',
+              border: '1px solid var(--color-border-tertiary)',
+              borderRadius: 'var(--radius-m)',
               padding: '8px',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
+              boxShadow: 'var(--shadow-lg)',
               zIndex: 50
             }}>
-              <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-subtle)', marginBottom: '6px' }}>
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--color-border-tertiary)', marginBottom: '6px' }}>
+                <span style={{ fontSize: '0.7rem', color: 'var(--color-content-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
                   Switch Identity (Demo)
                 </span>
               </div>
@@ -181,17 +188,17 @@ export const Header: React.FC<HeaderProps> = ({ onNewTicketClick }) => {
                   alignItems: 'center',
                   gap: '8px',
                   padding: '8px 12px',
-                  background: user?.role === 'SupportAgent' ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
+                  backgroundColor: user?.role === 'SupportAgent' ? 'var(--color-highlight-neutral)' : 'transparent',
                   border: 'none',
                   borderRadius: '6px',
-                  color: user?.role === 'SupportAgent' ? 'var(--accent-primary)' : 'var(--text-main)',
+                  color: 'var(--color-content-primary)',
                   fontSize: '0.8rem',
-                  fontWeight: 500,
+                  fontWeight: user?.role === 'SupportAgent' ? 600 : 500,
                   cursor: 'pointer',
                   textAlign: 'left'
                 }}
               >
-                <Shield size={14} />
+                <Shield size={14} color="var(--color-brand-blue)" />
                 <span>Alex Rivera (Support Agent)</span>
               </button>
 
@@ -203,17 +210,17 @@ export const Header: React.FC<HeaderProps> = ({ onNewTicketClick }) => {
                   alignItems: 'center',
                   gap: '8px',
                   padding: '8px 12px',
-                  background: user?.role === 'Customer' ? 'rgba(6, 182, 212, 0.15)' : 'transparent',
+                  backgroundColor: user?.role === 'Customer' ? 'var(--color-highlight-neutral)' : 'transparent',
                   border: 'none',
                   borderRadius: '6px',
-                  color: user?.role === 'Customer' ? '#22d3ee' : 'var(--text-main)',
+                  color: 'var(--color-content-primary)',
                   fontSize: '0.8rem',
-                  fontWeight: 500,
+                  fontWeight: user?.role === 'Customer' ? 600 : 500,
                   cursor: 'pointer',
                   textAlign: 'left'
                 }}
               >
-                <UserIcon size={14} />
+                <UserIcon size={14} color="var(--color-brand-green)" />
                 <span>Sarah Connor (Customer)</span>
               </button>
 
@@ -225,21 +232,21 @@ export const Header: React.FC<HeaderProps> = ({ onNewTicketClick }) => {
                   alignItems: 'center',
                   gap: '8px',
                   padding: '8px 12px',
-                  background: user?.role === 'SystemAdministrator' ? 'rgba(168, 85, 247, 0.15)' : 'transparent',
+                  backgroundColor: user?.role === 'SystemAdministrator' ? 'var(--color-highlight-neutral)' : 'transparent',
                   border: 'none',
                   borderRadius: '6px',
-                  color: user?.role === 'SystemAdministrator' ? '#c084fc' : 'var(--text-main)',
+                  color: 'var(--color-content-primary)',
                   fontSize: '0.8rem',
-                  fontWeight: 500,
+                  fontWeight: user?.role === 'SystemAdministrator' ? 600 : 500,
                   cursor: 'pointer',
                   textAlign: 'left'
                 }}
               >
-                <Shield size={14} />
+                <Shield size={14} color="var(--color-brand-purple)" />
                 <span>Admin (System Admin)</span>
               </button>
 
-              <div style={{ borderTop: '1px solid var(--border-subtle)', marginTop: '6px', paddingTop: '6px' }}>
+              <div style={{ borderTop: '1px solid var(--color-border-tertiary)', marginTop: '6px', paddingTop: '6px' }}>
                 <button
                   onClick={() => { logout(); setIsProfileMenuOpen(false); }}
                   style={{
@@ -248,10 +255,10 @@ export const Header: React.FC<HeaderProps> = ({ onNewTicketClick }) => {
                     alignItems: 'center',
                     gap: '8px',
                     padding: '8px 12px',
-                    background: 'transparent',
+                    backgroundColor: 'transparent',
                     border: 'none',
                     borderRadius: '6px',
-                    color: 'var(--accent-danger)',
+                    color: 'var(--color-brand-coral)',
                     fontSize: '0.8rem',
                     fontWeight: 500,
                     cursor: 'pointer',

@@ -87,47 +87,49 @@ export const KnowledgeBasePage: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      {/* Editorial Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#fff', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <BookOpen size={24} color="var(--accent-primary)" />
-            Knowledge Base & Grounded AI
+          <h2 style={{ fontSize: '1.75rem', fontFamily: 'var(--font-serif)', color: 'var(--color-content-primary)', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+            <BookOpen size={22} color="var(--color-content-primary)" />
+            Knowledge Base &amp; Grounded <em>AI</em>
           </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+          <p style={{ color: 'var(--color-content-secondary)', fontSize: '0.9rem' }}>
             Vector embeddings stored with cosine similarity search to deliver verified, citation-backed answers.
           </p>
         </div>
-        <button onClick={() => setIsModalOpen(true)} className="btn-primary">
+        <button onClick={() => setIsModalOpen(true)} className="btn-primary" style={{ borderRadius: '9999px', padding: '9px 18px' }}>
           <Plus size={16} />
           <span>New Article</span>
         </button>
       </div>
 
       {/* AI Semantic RAG Query Engine Card */}
-      <div className="glass-panel glow-card" style={{ padding: '28px', background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(6, 182, 212, 0.08) 100%)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+      <div className="editorial-card" style={{ padding: '28px 32px', backgroundColor: 'var(--color-surface-intro)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Sparkles size={18} color="var(--accent-primary)" />
-            <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#fff' }}>Grounded AI Semantic Search (RAG)</span>
-            <span className="badge" style={{ background: 'rgba(6, 182, 212, 0.15)', color: '#22d3ee', fontSize: '0.68rem' }}>
-              Cosine Similarity Vector Search
+            <Sparkles size={18} color="var(--color-brand-purple)" />
+            <span style={{ fontSize: '1.05rem', fontFamily: 'var(--font-serif)', fontWeight: 600, color: 'var(--color-content-primary)' }}>
+              Semantic Search &amp; Grounded RAG
+            </span>
+            <span className="badge" style={{ backgroundColor: 'var(--color-highlight-purple)', borderColor: 'rgba(196, 85, 235, 0.3)', color: 'var(--color-brand-purple)', fontSize: '0.68rem' }}>
+              Cosine Similarity
             </span>
           </div>
 
           {/* Confidence Threshold Pill Selector */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', color: 'var(--color-content-secondary)' }}>
             <span>Relevance Threshold:</span>
             <select
               value={confidenceThreshold}
               onChange={(e) => setConfidenceThreshold(parseFloat(e.target.value))}
               style={{
-                background: 'rgba(255, 255, 255, 0.08)',
-                border: '1px solid var(--border-subtle)',
+                backgroundColor: 'var(--color-surface-neutral)',
+                border: '1px solid var(--color-border-tertiary)',
                 borderRadius: '6px',
-                color: '#fff',
-                padding: '2px 8px',
-                fontSize: '0.72rem',
+                color: 'var(--color-content-primary)',
+                padding: '3px 8px',
+                fontSize: '0.75rem',
                 cursor: 'pointer'
               }}
             >
@@ -148,13 +150,13 @@ export const KnowledgeBasePage: React.FC = () => {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAskAi()}
             className="input-field"
-            style={{ fontSize: '0.9rem', flex: 1 }}
+            style={{ fontSize: '0.9rem', flex: 1, borderRadius: '9999px', padding: '11px 18px', backgroundColor: 'var(--color-surface-neutral)' }}
           />
           <button 
             disabled={isSearching || !query.trim()} 
             onClick={handleAskAi} 
             className="btn-primary" 
-            style={{ whiteSpace: 'nowrap', padding: '0 24px' }}
+            style={{ whiteSpace: 'nowrap', padding: '0 24px', borderRadius: '9999px' }}
           >
             {isSearching ? 'Retrieving Embeddings...' : 'Ask Grounded AI'}
           </button>
@@ -164,26 +166,27 @@ export const KnowledgeBasePage: React.FC = () => {
         {ragResult && (
           <div style={{ 
             marginTop: '20px', 
-            padding: '20px', 
-            borderRadius: '14px', 
-            background: ragResult.isGrounded ? 'rgba(15, 23, 42, 0.85)' : 'rgba(239, 68, 68, 0.08)', 
-            border: ragResult.isGrounded ? '1px solid rgba(99, 102, 241, 0.4)' : '1px solid rgba(239, 68, 68, 0.3)' 
+            padding: '22px 24px', 
+            borderRadius: 'var(--radius-s)', 
+            backgroundColor: 'var(--color-surface-neutral)',
+            border: ragResult.isGrounded ? '1px solid var(--color-border-primary)' : '1px solid var(--color-brand-coral)',
+            boxShadow: 'var(--shadow-md)'
           }}>
             {/* Answer Header Bar */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 {ragResult.isGrounded ? (
                   <>
-                    <ShieldCheck size={18} color="var(--accent-success)" />
-                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#34d399' }}>
+                    <ShieldCheck size={18} color="#15803d" />
+                    <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#15803d' }}>
                       Grounded Answer (Supported by Verified Knowledge Base)
                     </span>
                   </>
                 ) : (
                   <>
-                    <AlertTriangle size={18} color="var(--accent-danger)" />
-                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#f87171' }}>
-                      Unsupported Query — Fallback Escalated
+                    <AlertTriangle size={18} color="#b91c1c" />
+                    <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#b91c1c' }}>
+                      Unsupported Query — Fallback Escalated to Human Agent
                     </span>
                   </>
                 )}
@@ -191,41 +194,41 @@ export const KnowledgeBasePage: React.FC = () => {
 
               {/* Confidence Score Badge */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Confidence Score:</span>
-                <span className={`badge ${ragResult.isGrounded ? 'badge-sla-ok' : 'badge-sla-breached'}`} style={{ fontSize: '0.75rem', fontWeight: 700 }}>
+                <span style={{ fontSize: '0.75rem', color: 'var(--color-content-secondary)' }}>Confidence:</span>
+                <span className={`badge ${ragResult.isGrounded ? 'badge-sla-ok' : 'badge-sla-breached'}`} style={{ fontSize: '0.75rem', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
                   {Math.round(ragResult.confidenceScore * 100)}%
                 </span>
               </div>
             </div>
 
             {/* Answer Body */}
-            <div style={{ fontSize: '0.9rem', color: 'var(--text-main)', lineHeight: 1.6, whiteSpace: 'pre-wrap', marginBottom: '16px' }}>
+            <div style={{ fontSize: '0.92rem', color: 'var(--color-content-primary)', lineHeight: 1.65, whiteSpace: 'pre-wrap', marginBottom: '16px' }}>
               {ragResult.answer}
             </div>
 
             {/* Source Citations Strip */}
             {ragResult.citations && ragResult.citations.length > 0 && (
-              <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-subtle)' }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Document Citations & Relevance Scores:
+              <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--color-border-tertiary)' }}>
+                <div style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--color-content-tertiary)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Document Citations &amp; Relevance Scores:
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '10px' }}>
                   {ragResult.citations.map((c) => (
                     <div 
                       key={c.articleId}
                       style={{
-                        padding: '10px 14px',
-                        background: 'rgba(255, 255, 255, 0.03)',
-                        border: '1px solid var(--border-subtle)',
-                        borderRadius: '8px',
+                        padding: '12px 14px',
+                        backgroundColor: 'var(--color-surface-light)',
+                        border: '1px solid var(--color-border-tertiary)',
+                        borderRadius: 'var(--radius-s)',
                         fontSize: '0.78rem'
                       }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: 'var(--accent-secondary)', marginBottom: '4px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: 'var(--color-content-primary)', marginBottom: '4px' }}>
                         <span>{c.title}</span>
-                        <span style={{ color: 'var(--accent-primary)' }}>{Math.round(c.relevanceScore * 100)}%</span>
+                        <span className="font-mono" style={{ color: 'var(--color-brand-blue)' }}>{Math.round(c.relevanceScore * 100)}%</span>
                       </div>
-                      <div style={{ color: 'var(--text-dim)', fontSize: '0.72rem' }}>
+                      <div style={{ color: 'var(--color-content-secondary)', fontSize: '0.75rem', lineHeight: 1.4 }}>
                         {c.excerpt}
                       </div>
                     </div>
@@ -240,87 +243,91 @@ export const KnowledgeBasePage: React.FC = () => {
       {/* Knowledge Base Articles Directory */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#fff' }}>
+          <h3 style={{ fontSize: '1.3rem', fontFamily: 'var(--font-serif)', color: 'var(--color-content-primary)' }}>
             Verified Articles Directory ({articles.length})
           </h3>
 
           <div style={{ width: '280px', position: 'relative' }}>
-            <Search size={14} color="var(--text-dim)" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
+            <Search size={14} color="var(--color-content-tertiary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
             <input
               type="text"
-              placeholder="Search documentation..."
+              placeholder="Filter documentation..."
               value={articleSearch}
               onChange={(e) => setArticleSearch(e.target.value)}
               className="input-field"
-              style={{ paddingLeft: '32px', height: '34px', fontSize: '0.78rem' }}
+              style={{ paddingLeft: '34px', height: '36px', fontSize: '0.8rem', borderRadius: '9999px' }}
             />
           </div>
         </div>
 
         {/* Category Pills */}
         <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              style={{
-                padding: '5px 12px',
-                borderRadius: '8px',
-                border: '1px solid',
-                borderColor: selectedCategory === cat ? 'var(--accent-primary)' : 'var(--border-subtle)',
-                background: selectedCategory === cat ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
-                color: selectedCategory === cat ? '#a5b4fc' : 'var(--text-muted)',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              {cat}
-            </button>
-          ))}
+          {categories.map((cat) => {
+            const active = selectedCategory === cat;
+            return (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                style={{
+                  padding: '5px 14px',
+                  borderRadius: '9999px',
+                  border: '1px solid',
+                  borderColor: active ? 'var(--color-border-primary)' : 'var(--color-border-tertiary)',
+                  backgroundColor: active ? 'var(--color-surface-inverted)' : 'var(--color-surface-neutral)',
+                  color: active ? '#ffffff' : 'var(--color-content-secondary)',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                {cat}
+              </button>
+            );
+          })}
         </div>
 
         {/* Articles Grid */}
         {isLoadingArticles ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--color-content-tertiary)' }}>
             Loading articles...
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '18px' }}>
             {articles.map((art) => (
               <div 
                 key={art.id} 
-                className="glass-panel" 
-                style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+                className="editorial-card" 
+                style={{ padding: '22px 24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
               >
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <span className="badge badge-medium" style={{ fontSize: '0.65rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <span className="badge badge-medium" style={{ fontSize: '0.68rem' }}>
                       {art.category}
                     </span>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>
+                    <span className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--color-content-tertiary)' }}>
                       {art.viewCount} views
                     </span>
                   </div>
 
-                  <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#fff', marginBottom: '8px' }}>
+                  <h4 style={{ fontSize: '1.05rem', fontFamily: 'var(--font-serif)', color: 'var(--color-content-primary)', marginBottom: '8px' }}>
                     {art.title}
                   </h4>
 
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  <p style={{ fontSize: '0.82rem', color: 'var(--color-content-secondary)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                     {art.content}
                   </p>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-subtle)', fontSize: '0.75rem' }}>
-                  <span style={{ color: 'var(--accent-primary)', fontWeight: 600 }}>Vector Indexed ✓</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '18px', paddingTop: '12px', borderTop: '1px solid var(--color-border-tertiary)', fontSize: '0.75rem' }}>
+                  <span className="font-mono" style={{ color: '#15803d', fontWeight: 600 }}>Vector Indexed ✓</span>
                   <button 
                     onClick={() => {
                       setQuery(`How do I handle ${art.title}?`);
                       handleAskAi();
                     }}
-                    style={{ background: 'transparent', border: 'none', color: 'var(--accent-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    style={{ background: 'transparent', border: 'none', color: 'var(--color-brand-blue)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}
                   >
                     <span>Test Query</span>
                     <ExternalLink size={12} />
@@ -340,24 +347,24 @@ export const KnowledgeBasePage: React.FC = () => {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0, 0, 0, 0.75)',
-          backdropFilter: 'blur(6px)',
+          background: 'rgba(40, 40, 37, 0.45)',
+          backdropFilter: 'blur(4px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 1000
         }}>
-          <div className="glass-panel" style={{ width: '560px', maxWidth: '95%', padding: '28px', border: '1px solid var(--border-focus)' }}>
+          <div className="editorial-card" style={{ width: '560px', maxWidth: '95%', padding: '30px', boxShadow: 'var(--shadow-lg)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff' }}>Publish Knowledge Article</h3>
-              <button onClick={() => setIsModalOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+              <h3 style={{ fontSize: '1.3rem', fontFamily: 'var(--font-serif)', color: 'var(--color-content-primary)' }}>Publish Knowledge Article</h3>
+              <button onClick={() => setIsModalOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--color-content-tertiary)', cursor: 'pointer' }}>
                 <X size={18} />
               </button>
             </div>
 
             <form onSubmit={handleCreateArticleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '6px' }}>Title</label>
+                <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--color-content-secondary)', marginBottom: '6px', fontWeight: 600 }}>Title</label>
                 <input
                   type="text"
                   required
@@ -369,19 +376,11 @@ export const KnowledgeBasePage: React.FC = () => {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '6px' }}>Category</label>
+                <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--color-content-secondary)', marginBottom: '6px', fontWeight: 600 }}>Category</label>
                 <select
                   value={newCategory}
                   onChange={(e) => setNewCategory(e.target.value)}
-                  style={{
-                    width: '100%',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    padding: '8px 12px',
-                    fontSize: '0.85rem'
-                  }}
+                  className="input-field"
                 >
                   <option value="Configuration & DNS">Configuration & DNS</option>
                   <option value="AI & Knowledge Retrieval">AI & Knowledge Retrieval</option>
@@ -392,7 +391,7 @@ export const KnowledgeBasePage: React.FC = () => {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '6px' }}>Markdown Documentation Content</label>
+                <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--color-content-secondary)', marginBottom: '6px', fontWeight: 600 }}>Markdown Documentation Content</label>
                 <textarea
                   rows={6}
                   required
@@ -400,7 +399,7 @@ export const KnowledgeBasePage: React.FC = () => {
                   value={newContent}
                   onChange={(e) => setNewContent(e.target.value)}
                   className="input-field"
-                  style={{ width: '100%', resize: 'none' }}
+                  style={{ width: '100%', resize: 'vertical' }}
                 />
               </div>
 

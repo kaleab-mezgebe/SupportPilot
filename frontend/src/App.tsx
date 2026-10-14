@@ -96,24 +96,24 @@ export function App() {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0, 0, 0, 0.75)',
-          backdropFilter: 'blur(6px)',
+          background: 'rgba(40, 40, 37, 0.45)',
+          backdropFilter: 'blur(4px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 100
         }}>
-          <div className="glass-panel" style={{ width: '560px', padding: '28px', background: 'var(--bg-secondary)', border: '1px solid var(--border-focus)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff' }}>Create Support Ticket</h3>
-              <button onClick={() => setIsNewTicketModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+          <div className="editorial-card" style={{ width: '560px', padding: '32px', boxShadow: 'var(--shadow-lg)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '22px' }}>
+              <h3 style={{ fontSize: '1.35rem', fontFamily: 'var(--font-serif)', color: 'var(--color-content-primary)' }}>Create Support Ticket</h3>
+              <button onClick={() => setIsNewTicketModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--color-content-tertiary)', cursor: 'pointer' }}>
                 <X size={20} />
               </button>
             </div>
 
             <form onSubmit={handleCreateTicketSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-content-secondary)', marginBottom: '6px' }}>
                   Ticket Subject / Title *
                 </label>
                 <input 
@@ -128,7 +128,7 @@ export function App() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-content-secondary)', marginBottom: '6px' }}>
                     Customer Name
                   </label>
                   <input 
@@ -140,7 +140,7 @@ export function App() {
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-content-secondary)', marginBottom: '6px' }}>
                     Customer Email
                   </label>
                   <input 
@@ -155,14 +155,13 @@ export function App() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-content-secondary)', marginBottom: '6px' }}>
                     Priority
                   </label>
                   <select 
                     value={priority}
                     onChange={(e) => setPriority(e.target.value as TicketPriority)}
                     className="input-field"
-                    style={{ background: 'var(--bg-tertiary)', color: '#fff' }}
                   >
                     <option value="Low">Low</option>
                     <option value="Medium">Medium</option>
@@ -171,14 +170,13 @@ export function App() {
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-content-secondary)', marginBottom: '6px' }}>
                     Category
                   </label>
                   <select 
                     value={categoryName}
                     onChange={(e) => setCategoryName(e.target.value)}
                     className="input-field"
-                    style={{ background: 'var(--bg-tertiary)', color: '#fff' }}
                   >
                     <option value="General Support">General Support</option>
                     <option value="Configuration & DNS">Configuration & DNS</option>
@@ -189,7 +187,7 @@ export function App() {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-content-secondary)', marginBottom: '6px' }}>
                   Detailed Description *
                 </label>
                 <textarea 

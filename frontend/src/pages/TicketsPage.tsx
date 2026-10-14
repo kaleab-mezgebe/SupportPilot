@@ -6,12 +6,12 @@ import {
   CheckCircle, 
   Lock, 
   Clock,
-  AlertTriangle,
-  CheckSquare,
-  Square,
-  Layers,
-  Check,
-  Star
+  AlertTriangle, 
+  CheckSquare, 
+  Square, 
+  Layers, 
+  Check, 
+  Star 
 } from 'lucide-react';
 import { ApiService } from '../services/api';
 import { RealtimeService } from '../services/signalr';
@@ -207,24 +207,6 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
     }
   };
 
-  const handleBulkPriorityChange = async (priority: TicketPriority) => {
-    if (selectedTicketIds.length === 0) return;
-    setIsBulkExecuting(true);
-    try {
-      const res = await ApiService.bulkUpdatePriority(selectedTicketIds, priority);
-      setBulkFeedback(res.message);
-      setSelectedTicketIds([]);
-      await loadTickets();
-      if (selectedTicketId && selectedTicketIds.includes(selectedTicketId)) {
-        const updated = await ApiService.getTicketDetail(selectedTicketId);
-        setTicketDetail(updated);
-      }
-      setTimeout(() => setBulkFeedback(null), 3000);
-    } finally {
-      setIsBulkExecuting(false);
-    }
-  };
-
   const handlePriorityChange = async (newPriority: TicketPriority) => {
     if (!selectedTicketId) return;
     setIsUpdatingPriority(true);
@@ -335,18 +317,18 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
   };
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '460px 1fr', gap: '24px', height: 'calc(100vh - 140px)' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '460px 1fr', gap: '24px', height: 'calc(100vh - 130px)' }}>
       {/* Left Column: Triage Queue & Workspace Inbox */}
-      <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+      <div className="editorial-card" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
         
-        {/* Queue Presets Strip (Sprint 5) */}
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)', background: 'rgba(255, 255, 255, 0.01)' }}>
+        {/* Queue Presets Strip */}
+        <div style={{ padding: '18px 20px', borderBottom: '1px solid var(--color-border-tertiary)', backgroundColor: 'var(--color-surface-light)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Layers size={18} color="var(--accent-primary)" />
-              Support Workspace
+            <h2 style={{ fontSize: '1.2rem', fontFamily: 'var(--font-serif)', color: 'var(--color-content-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Layers size={17} color="var(--color-content-primary)" />
+              Support Inbox
             </h2>
-            <span className="badge badge-open" style={{ fontSize: '0.72rem' }}>
+            <span className="badge font-mono" style={{ backgroundColor: 'var(--color-surface-neutral)', borderColor: 'var(--color-border-tertiary)', color: 'var(--color-content-primary)' }}>
               {tickets.length} tickets
             </span>
           </div>
@@ -359,41 +341,45 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
               { id: 'unassigned', label: 'Unassigned' },
               { id: 'sla_at_risk', label: '⚠️ SLA Risk' },
               { id: 'urgent', label: '🔥 Urgent' }
-            ].map((q) => (
-              <button
-                key={q.id}
-                onClick={() => setQueuePreset(q.id as QueuePreset)}
-                style={{
-                  padding: '5px 10px',
-                  borderRadius: '6px',
-                  border: '1px solid',
-                  borderColor: queuePreset === q.id ? 'var(--accent-primary)' : 'var(--border-subtle)',
-                  background: queuePreset === q.id ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
-                  color: queuePreset === q.id ? '#a5b4fc' : 'var(--text-muted)',
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {q.label}
-              </button>
-            ))}
+            ].map((q) => {
+              const active = queuePreset === q.id;
+              return (
+                <button
+                  key={q.id}
+                  onClick={() => setQueuePreset(q.id as QueuePreset)}
+                  style={{
+                    padding: '5px 12px',
+                    borderRadius: '9999px',
+                    border: '1px solid',
+                    borderColor: active ? 'var(--color-border-primary)' : 'var(--color-border-tertiary)',
+                    backgroundColor: active ? 'var(--color-surface-inverted)' : 'var(--color-surface-neutral)',
+                    color: active ? '#ffffff' : 'var(--color-content-secondary)',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  {q.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
         {/* Filter & Sorting Controls */}
-        <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--color-border-tertiary)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <div style={{ display: 'flex', gap: '8px' }}>
             <div style={{ position: 'relative', flex: 1 }}>
-              <Search size={14} color="var(--text-dim)" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
+              <Search size={14} color="var(--color-content-tertiary)" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
               <input 
                 type="text" 
-                placeholder="Search by ref, title, customer..." 
+                placeholder="Search reference, customer, title..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="input-field" 
-                style={{ paddingLeft: '32px', height: '34px', fontSize: '0.8rem' }}
+                style={{ paddingLeft: '32px', height: '34px', fontSize: '0.8rem', borderRadius: '6px' }}
               />
             </div>
 
@@ -404,11 +390,11 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
                 onChange={(e) => setSortOption(e.target.value as SortOption)}
                 style={{
                   height: '34px',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: '8px',
-                  color: 'var(--text-main)',
-                  padding: '0 8px',
+                  backgroundColor: 'var(--color-surface-neutral)',
+                  border: '1px solid var(--color-border-tertiary)',
+                  borderRadius: '6px',
+                  color: 'var(--color-content-primary)',
+                  padding: '0 10px',
                   fontSize: '0.75rem',
                   fontWeight: 600,
                   cursor: 'pointer'
@@ -417,181 +403,96 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
                 <option value="newest">🕒 Newest</option>
                 <option value="oldest">⏳ Oldest</option>
                 <option value="sla_deadline">⏱️ SLA Deadline</option>
-                <option value="priority">⚡ Highest Priority</option>
+                <option value="priority">⚡ High Priority</option>
               </select>
             </div>
           </div>
 
           {/* Quick Status Filters */}
           <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '2px' }}>
-            {['All', 'Open', 'InProgress', 'PendingCustomer', 'Resolved'].map((st) => (
-              <button
-                key={st}
-                onClick={() => setStatusFilter(st)}
-                style={{
-                  padding: '3px 8px',
-                  borderRadius: '6px',
-                  border: '1px solid',
-                  borderColor: statusFilter === st ? 'var(--accent-primary)' : 'var(--border-subtle)',
-                  background: statusFilter === st ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
-                  color: statusFilter === st ? '#a5b4fc' : 'var(--text-muted)',
-                  fontSize: '0.7rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {st}
-              </button>
-            ))}
+            {['All', 'Open', 'InProgress', 'PendingCustomer', 'Resolved'].map((st) => {
+              const active = statusFilter === st;
+              return (
+                <button
+                  key={st}
+                  onClick={() => setStatusFilter(st)}
+                  style={{
+                    padding: '3px 10px',
+                    borderRadius: '6px',
+                    border: '1px solid',
+                    borderColor: active ? 'var(--color-border-primary)' : 'var(--color-border-tertiary)',
+                    backgroundColor: active ? 'var(--color-surface-dim)' : 'transparent',
+                    color: active ? 'var(--color-content-primary)' : 'var(--color-content-secondary)',
+                    fontSize: '0.72rem',
+                    fontWeight: active ? 700 : 500,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {st}
+                </button>
+              );
+            })}
           </div>
 
           {/* Master Select All Bar */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            <button
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: 'var(--color-content-secondary)' }}>
+            <div 
               onClick={toggleSelectAll}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--text-muted)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                fontSize: '0.75rem'
-              }}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', userSelect: 'none' }}
             >
               {selectedTicketIds.length > 0 && selectedTicketIds.length === tickets.length ? (
-                <CheckSquare size={14} color="var(--accent-primary)" />
+                <CheckSquare size={14} color="var(--color-content-primary)" />
               ) : (
-                <Square size={14} color="var(--text-dim)" />
+                <Square size={14} color="var(--color-border-secondary)" />
               )}
-              <span>Select all {tickets.length}</span>
-            </button>
+              <span style={{ fontWeight: 600 }}>Select All ({selectedTicketIds.length} of {tickets.length})</span>
+            </div>
 
-            {selectedTicketIds.length > 0 && (
-              <span style={{ color: 'var(--accent-primary)', fontWeight: 600 }}>
-                {selectedTicketIds.length} selected
+            {bulkFeedback && (
+              <span style={{ color: '#15803d', fontWeight: 600, fontSize: '0.72rem' }}>
+                ✓ {bulkFeedback}
               </span>
             )}
           </div>
         </div>
 
-        {/* Floating Bulk Triage Toolbar (Sprint 5) */}
+        {/* Floating Bulk Action Ribbon */}
         {selectedTicketIds.length > 0 && (
-          <div style={{ padding: '8px 16px', background: 'rgba(15, 23, 42, 0.95)', borderBottom: '1px solid var(--accent-primary)' }}>
-            <div className="bulk-triage-bar">
-              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#fff' }}>
-                Bulk Actions ({selectedTicketIds.length})
-              </span>
-
-              <div style={{ display: 'flex', gap: '6px' }}>
-                {/* Bulk Status Select */}
-                <select
-                  disabled={isBulkExecuting}
-                  onChange={(e) => {
-                    if (e.target.value) handleBulkStatusChange(e.target.value as TicketStatus);
-                  }}
-                  defaultValue=""
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: '6px',
-                    color: '#fff',
-                    padding: '4px 8px',
-                    fontSize: '0.72rem',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <option value="" disabled>Status...</option>
-                  <option value="Open">Open</option>
-                  <option value="InProgress">In Progress</option>
-                  <option value="PendingCustomer">Pending Customer</option>
-                  <option value="Resolved">Resolved</option>
-                  <option value="Closed">Closed</option>
-                </select>
-
-                {/* Bulk Assign Select */}
-                <select
-                  disabled={isBulkExecuting}
-                  onChange={(e) => {
-                    if (e.target.value !== '') handleBulkAssign(e.target.value === 'null' ? null : e.target.value);
-                  }}
-                  defaultValue=""
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: '6px',
-                    color: '#fff',
-                    padding: '4px 8px',
-                    fontSize: '0.72rem',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <option value="" disabled>Assign...</option>
-                  <option value="null">Unassign</option>
-                  {agents.map(a => (
-                    <option key={a.id} value={a.id}>{a.fullName}</option>
-                  ))}
-                </select>
-
-                {/* Bulk Priority Select */}
-                <select
-                  disabled={isBulkExecuting}
-                  onChange={(e) => {
-                    if (e.target.value) handleBulkPriorityChange(e.target.value as TicketPriority);
-                  }}
-                  defaultValue=""
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: '6px',
-                    color: '#fff',
-                    padding: '4px 8px',
-                    fontSize: '0.72rem',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <option value="" disabled>Priority...</option>
-                  <option value="Urgent">Urgent</option>
-                  <option value="High">High</option>
-                  <option value="Medium">Medium</option>
-                  <option value="Low">Low</option>
-                </select>
-
-                <button
-                  onClick={() => setSelectedTicketIds([])}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--text-muted)',
-                    cursor: 'pointer',
-                    fontSize: '0.72rem'
-                  }}
-                >
-                  ✕
-                </button>
-              </div>
+          <div className="bulk-triage-bar" style={{ margin: '8px 12px', padding: '10px 14px' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#ffffff' }}>
+              {selectedTicketIds.length} selected
+            </span>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <button 
+                disabled={isBulkExecuting}
+                onClick={() => handleBulkStatusChange('Resolved')}
+                className="btn-secondary"
+                style={{ padding: '4px 10px', fontSize: '0.72rem', color: '#15803d', borderColor: '#15803d', borderRadius: '4px' }}
+              >
+                Resolve All
+              </button>
+              <button 
+                disabled={isBulkExecuting}
+                onClick={() => handleBulkAssign(agents[0]?.id || null)}
+                className="btn-secondary"
+                style={{ padding: '4px 10px', fontSize: '0.72rem', borderRadius: '4px' }}
+              >
+                Assign
+              </button>
             </div>
           </div>
         )}
 
-        {/* Feedback alert toast */}
-        {bulkFeedback && (
-          <div style={{ padding: '8px 16px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', fontSize: '0.75rem', fontWeight: 600 }}>
-            ✓ {bulkFeedback}
-          </div>
-        )}
-
-        {/* Tickets Scroll List */}
-        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+        {/* Tickets Scrollable List */}
+        <div style={{ flex: 1, overflowY: 'auto' }}>
           {tickets.length === 0 ? (
-            <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
-              No tickets matched the active queue filter.
+            <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--color-content-tertiary)', fontSize: '0.85rem' }}>
+              No tickets matched the current filter criteria.
             </div>
           ) : (
             tickets.map((t) => {
-              const isSelected = selectedTicketId === t.id;
+              const isSelected = t.id === selectedTicketId;
               const isChecked = selectedTicketIds.includes(t.id);
               const sla = getSlaIndicator(t);
               const SlaIcon = sla.icon;
@@ -602,11 +503,11 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
                   onClick={() => setSelectedTicketId(t.id)}
                   style={{
                     padding: '14px 18px',
-                    borderBottom: '1px solid var(--border-subtle)',
-                    background: isSelected ? 'rgba(99, 102, 241, 0.12)' : isChecked ? 'rgba(99, 102, 241, 0.05)' : 'transparent',
-                    borderLeft: isSelected ? '3px solid var(--accent-primary)' : '3px solid transparent',
+                    borderBottom: '1px solid var(--color-border-tertiary)',
+                    backgroundColor: isSelected ? 'var(--color-surface-dim)' : isChecked ? 'var(--color-highlight-neutral)' : 'var(--color-surface-neutral)',
+                    borderLeft: isSelected ? '3px solid var(--color-border-primary)' : '3px solid transparent',
                     cursor: 'pointer',
-                    transition: 'background 0.15s ease',
+                    transition: 'background-color 0.15s ease',
                     display: 'flex',
                     gap: '12px',
                     alignItems: 'flex-start'
@@ -618,16 +519,16 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
                     style={{ paddingTop: '2px', cursor: 'pointer' }}
                   >
                     {isChecked ? (
-                      <CheckSquare size={16} color="var(--accent-primary)" />
+                      <CheckSquare size={15} color="var(--color-content-primary)" />
                     ) : (
-                      <Square size={16} color="var(--text-dim)" />
+                      <Square size={15} color="var(--color-border-secondary)" />
                     )}
                   </div>
 
                   {/* Ticket Summary Content */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                      <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--accent-primary)', fontFamily: 'JetBrains Mono' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
+                      <span className="font-mono" style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--color-content-primary)' }}>
                         {t.ticketReference}
                       </span>
 
@@ -638,17 +539,17 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
                       </span>
                     </div>
 
-                    <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#fff', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--color-content-primary)', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {t.title}
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: 'var(--color-content-secondary)' }}>
                       <span>{t.customerName}</span>
                       <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                         <span className={`badge badge-${t.priority.toLowerCase()}`} style={{ fontSize: '0.62rem', padding: '1px 6px' }}>
                           {t.priority}
                         </span>
-                        <span className={`badge badge-${t.status.toLowerCase()}`} style={{ fontSize: '0.62rem', padding: '1px 6px' }}>
+                        <span className={`badge badge-${t.status.toLowerCase().replace(' ', '-')}`} style={{ fontSize: '0.62rem', padding: '1px 6px' }}>
                           {t.status}
                         </span>
                       </div>
@@ -662,28 +563,28 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
       </div>
 
       {/* Right Column: Ticket Workspace Thread & Agent Controls */}
-      <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+      <div className="editorial-card" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
         {ticketDetail ? (
           <>
             {/* Ticket Header Bar */}
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-subtle)', background: 'rgba(255, 255, 255, 0.01)' }}>
+            <div style={{ padding: '22px 28px', borderBottom: '1px solid var(--color-border-tertiary)', backgroundColor: 'var(--color-surface-light)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--accent-primary)', fontFamily: 'JetBrains Mono' }}>
+                    <span className="font-mono" style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-content-primary)' }}>
                       {ticketDetail.ticketReference}
                     </span>
 
-                    {/* Interactive Priority Selector (Sprint 5) */}
+                    {/* Interactive Priority Selector */}
                     <select
                       value={ticketDetail.priority}
                       disabled={isUpdatingPriority}
                       onChange={(e) => handlePriorityChange(e.target.value as TicketPriority)}
                       style={{
-                        background: 'rgba(255, 255, 255, 0.06)',
-                        border: '1px solid var(--border-subtle)',
+                        backgroundColor: 'var(--color-surface-neutral)',
+                        border: '1px solid var(--color-border-tertiary)',
                         borderRadius: '6px',
-                        color: '#fff',
+                        color: 'var(--color-content-primary)',
                         padding: '2px 8px',
                         fontSize: '0.72rem',
                         fontWeight: 700,
@@ -696,7 +597,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
                       <option value="Low">🌱 Low Priority</option>
                     </select>
 
-                    <span className={`badge badge-${ticketDetail.status.toLowerCase()}`}>
+                    <span className={`badge badge-${ticketDetail.status.toLowerCase().replace(' ', '-')}`}>
                       {ticketDetail.status}
                     </span>
 
@@ -713,7 +614,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
                     })()}
                   </div>
 
-                  <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff' }}>
+                  <h2 style={{ fontSize: '1.35rem', fontFamily: 'var(--font-serif)', color: 'var(--color-content-primary)', lineHeight: 1.25 }}>
                     {ticketDetail.title}
                   </h2>
                 </div>
@@ -726,19 +627,19 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
                     disabled={isUpdatingStatus}
                     onChange={(e) => handleStatusChange(e.target.value as TicketStatus)}
                     style={{
-                      background: 'rgba(255, 255, 255, 0.06)',
-                      border: '1px solid var(--border-focus)',
-                      borderRadius: '8px',
-                      color: '#fff',
+                      backgroundColor: 'var(--color-surface-neutral)',
+                      border: '1px solid var(--color-border-tertiary)',
+                      borderRadius: '6px',
+                      color: 'var(--color-content-primary)',
                       padding: '6px 12px',
-                      fontSize: '0.75rem',
+                      fontSize: '0.78rem',
                       fontWeight: 600,
                       cursor: 'pointer'
                     }}
                   >
                     <option value="Open">Status: Open</option>
-                    <option value="InProgress">Status: InProgress</option>
-                    <option value="PendingCustomer">Status: PendingCustomer</option>
+                    <option value="InProgress">Status: In Progress</option>
+                    <option value="PendingCustomer">Status: Pending Customer</option>
                     <option value="Resolved">Status: Resolved</option>
                     <option value="Closed">Status: Closed</option>
                   </select>
@@ -749,12 +650,12 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
                     disabled={isAssigning}
                     onChange={(e) => handleAssignAgent(e.target.value ? e.target.value : null)}
                     style={{
-                      background: 'rgba(255, 255, 255, 0.06)',
-                      border: '1px solid var(--border-subtle)',
-                      borderRadius: '8px',
-                      color: '#fff',
+                      backgroundColor: 'var(--color-surface-neutral)',
+                      border: '1px solid var(--color-border-tertiary)',
+                      borderRadius: '6px',
+                      color: 'var(--color-content-primary)',
                       padding: '6px 12px',
-                      fontSize: '0.75rem',
+                      fontSize: '0.78rem',
                       cursor: 'pointer'
                     }}
                   >
@@ -769,7 +670,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
                     <button 
                       onClick={() => handleStatusChange('Resolved')}
                       className="btn-secondary" 
-                      style={{ padding: '6px 12px', fontSize: '0.75rem', color: 'var(--accent-success)', borderColor: 'rgba(16, 185, 129, 0.3)' }}
+                      style={{ padding: '6px 14px', fontSize: '0.78rem', color: '#15803d', borderColor: '#15803d' }}
                     >
                       <CheckCircle size={14} />
                       <span>Resolve</span>
@@ -778,46 +679,46 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
                 </div>
               </div>
 
-              {/* SLA Target Details Strip (Sprint 5) */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', padding: '10px 14px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px', fontSize: '0.76rem' }}>
+              {/* SLA Target Details Strip */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', padding: '10px 14px', backgroundColor: 'var(--color-surface-neutral)', border: '1px solid var(--color-border-tertiary)', borderRadius: '8px', fontSize: '0.76rem' }}>
                 <div>
-                  <div style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>Customer</div>
-                  <strong style={{ color: 'var(--text-main)' }}>{ticketDetail.customerName}</strong>
+                  <div style={{ color: 'var(--color-content-tertiary)', fontSize: '0.7rem' }}>Customer</div>
+                  <strong style={{ color: 'var(--color-content-primary)' }}>{ticketDetail.customerName}</strong>
                 </div>
                 <div>
-                  <div style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>Assigned Specialist</div>
-                  <strong style={{ color: '#fff' }}>{ticketDetail.assignedAgentName || 'Unassigned'}</strong>
+                  <div style={{ color: 'var(--color-content-tertiary)', fontSize: '0.7rem' }}>Assigned Specialist</div>
+                  <strong style={{ color: 'var(--color-content-primary)' }}>{ticketDetail.assignedAgentName || 'Unassigned'}</strong>
                 </div>
                 <div>
-                  <div style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>First Response Target</div>
-                  <span style={{ color: ticketDetail.firstResponseAtUtc ? 'var(--accent-success)' : 'var(--accent-primary)', fontWeight: 600 }}>
+                  <div style={{ color: 'var(--color-content-tertiary)', fontSize: '0.7rem' }}>First Response Target</div>
+                  <span className="font-mono" style={{ color: ticketDetail.firstResponseAtUtc ? '#15803d' : 'var(--color-brand-blue)', fontWeight: 600 }}>
                     {ticketDetail.firstResponseDueAtUtc ? new Date(ticketDetail.firstResponseDueAtUtc).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '1h'}
-                    {ticketDetail.firstResponseAtUtc && ' (Completed)'}
+                    {ticketDetail.firstResponseAtUtc && ' (Done)'}
                   </span>
                 </div>
                 <div>
-                  <div style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>Resolution Target</div>
-                  <span style={{ color: ticketDetail.isSlaBreached ? 'var(--accent-danger)' : 'var(--accent-secondary)', fontWeight: 600 }}>
+                  <div style={{ color: 'var(--color-content-tertiary)', fontSize: '0.7rem' }}>Resolution Target</div>
+                  <span className="font-mono" style={{ color: ticketDetail.isSlaBreached ? '#b91c1c' : '#b45309', fontWeight: 600 }}>
                     {ticketDetail.resolutionDueAtUtc ? new Date(ticketDetail.resolutionDueAtUtc).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '4h'}
                   </span>
                 </div>
               </div>
 
-              {/* CSAT Survey Banner (Sprint 9) */}
+              {/* CSAT Survey Banner */}
               {(ticketDetail.status === 'Resolved' || ticketDetail.status === 'Closed') && (
-                <div style={{ marginTop: '12px', padding: '12px 16px', background: 'rgba(234, 179, 8, 0.08)', border: '1px solid rgba(234, 179, 8, 0.25)', borderRadius: '10px' }}>
+                <div style={{ marginTop: '12px', padding: '12px 16px', backgroundColor: 'var(--color-highlight-yellow)', border: '1px solid rgba(240, 146, 54, 0.3)', borderRadius: '8px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      <div style={{ fontSize: '0.825rem', fontWeight: 700, color: '#facc15', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Star size={14} fill="#facc15" /> How satisfied are you with this resolution?
+                      <div style={{ fontSize: '0.825rem', fontWeight: 700, color: '#b45309', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Star size={14} fill="#b45309" /> How satisfied are you with this resolution?
                       </div>
-                      <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
-                        Rate your experience to help us continuously train our support engine.
+                      <p style={{ fontSize: '0.72rem', color: 'var(--color-content-secondary)', margin: '2px 0 0 0' }}>
+                        Rate your experience to help us continuously refine our support workflows.
                       </p>
                     </div>
 
                     {csatSubmitted ? (
-                      <span style={{ fontSize: '0.75rem', color: 'var(--accent-success)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ fontSize: '0.75rem', color: '#15803d', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <Check size={14} /> Rated ({csatRating} ★)
                       </span>
                     ) : (
@@ -827,20 +728,20 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
                             key={star}
                             onClick={() => handleCsatRating(ticketDetail.id, star)}
                             style={{
-                              background: csatRating >= star ? 'rgba(234, 179, 8, 0.25)' : 'rgba(255, 255, 255, 0.05)',
-                              border: csatRating >= star ? '1px solid #facc15' : '1px solid var(--border-subtle)',
+                              backgroundColor: csatRating >= star ? '#fde68a' : '#ffffff',
+                              border: csatRating >= star ? '1px solid #d97706' : '1px solid var(--color-border-tertiary)',
                               borderRadius: '6px',
-                              padding: '4px 7px',
-                              color: csatRating >= star ? '#facc15' : 'var(--text-dim)',
+                              padding: '4px 8px',
+                              color: csatRating >= star ? '#92400e' : 'var(--color-content-secondary)',
                               cursor: 'pointer',
                               display: 'flex',
                               alignItems: 'center',
                               gap: '2px',
-                              fontSize: '0.72rem',
+                              fontSize: '0.75rem',
                               fontWeight: 700
                             }}
                           >
-                            {star} <Star size={11} fill={csatRating >= star ? '#facc15' : 'none'} />
+                            {star} <Star size={11} fill={csatRating >= star ? '#92400e' : 'none'} />
                           </button>
                         ))}
                       </div>
@@ -851,7 +752,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
             </div>
 
             {/* Conversation Thread */}
-            <div style={{ flex: 1, padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ flex: 1, padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: 'var(--color-surface-primary)' }}>
               {ticketDetail.messages && ticketDetail.messages.length > 0 ? (
                 ticketDetail.messages.map((m) => {
                   const isInternal = m.isInternalNote;
@@ -863,27 +764,28 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
                       key={m.id}
                       style={{
                         padding: '16px 20px',
-                        borderRadius: '12px',
-                        background: isInternal
-                          ? 'rgba(234, 179, 8, 0.08)'
+                        borderRadius: 'var(--radius-s)',
+                        backgroundColor: isInternal
+                          ? 'var(--color-highlight-yellow)'
                           : isAi 
-                            ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(6, 182, 212, 0.1) 100%)' 
+                            ? 'var(--color-highlight-purple)' 
                             : isAgent
-                              ? 'rgba(99, 102, 241, 0.1)'
-                              : 'rgba(255, 255, 255, 0.03)',
+                              ? 'var(--color-surface-light)'
+                              : 'var(--color-surface-neutral)',
                         border: isInternal
-                          ? '1px dashed rgba(234, 179, 8, 0.4)'
+                          ? '1px dashed #d97706'
                           : isAi 
-                            ? '1px solid rgba(99, 102, 241, 0.3)' 
-                            : '1px solid var(--border-subtle)',
+                            ? '1px solid rgba(196, 85, 235, 0.35)' 
+                            : '1px solid var(--color-border-tertiary)',
                         maxWidth: '85%',
-                        alignSelf: isAgent || isInternal ? 'flex-end' : 'flex-start'
+                        alignSelf: isAgent || isInternal ? 'flex-end' : 'flex-start',
+                        boxShadow: 'var(--shadow-sm)'
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', fontSize: '0.75rem' }}>
                         <span style={{ 
                           fontWeight: 700, 
-                          color: isInternal ? '#facc15' : isAi ? 'var(--accent-secondary)' : isAgent ? 'var(--accent-primary)' : 'var(--text-main)',
+                          color: isInternal ? '#b45309' : isAi ? 'var(--color-brand-purple)' : isAgent ? 'var(--color-content-primary)' : 'var(--color-content-primary)',
                           display: 'flex',
                           alignItems: 'center',
                           gap: '6px'
@@ -892,17 +794,17 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
                           {isAi && <Sparkles size={12} />}
                           {m.senderName}
                         </span>
-                        <span style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>
+                        <span className="font-mono" style={{ color: 'var(--color-content-tertiary)', fontSize: '0.7rem' }}>
                           {new Date(m.createdAtUtc).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
 
-                      <div style={{ color: 'var(--text-main)', fontSize: '0.88rem', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
+                      <div style={{ color: 'var(--color-content-primary)', fontSize: '0.88rem', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
                         {m.content}
                       </div>
 
                       {isInternal && (
-                        <div style={{ marginTop: '8px', fontSize: '0.68rem', color: '#facc15', fontWeight: 600 }}>
+                        <div style={{ marginTop: '8px', fontSize: '0.68rem', color: '#b45309', fontWeight: 600 }}>
                           🔒 Confidential Internal Note (Visible to Agents Only)
                         </div>
                       )}
@@ -910,26 +812,26 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
                   );
                 })
               ) : (
-                <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                <div style={{ textAlign: 'center', padding: '40px', color: 'var(--color-content-tertiary)' }}>
                   No messages recorded in this ticket yet.
                 </div>
               )}
             </div>
 
             {/* Reply Composer Workspace */}
-            <div style={{ padding: '20px 24px', borderTop: '1px solid var(--border-subtle)', background: 'rgba(255, 255, 255, 0.01)' }}>
+            <div style={{ padding: '20px 24px', borderTop: '1px solid var(--color-border-tertiary)', backgroundColor: 'var(--color-surface-light)' }}>
               {/* Reply Mode Selector */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button
                     onClick={() => setReplyMode('public')}
                     style={{
-                      padding: '4px 12px',
-                      borderRadius: '6px',
+                      padding: '5px 14px',
+                      borderRadius: '9999px',
                       border: '1px solid',
-                      borderColor: replyMode === 'public' ? 'var(--accent-primary)' : 'var(--border-subtle)',
-                      background: replyMode === 'public' ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
-                      color: replyMode === 'public' ? '#fff' : 'var(--text-muted)',
+                      borderColor: replyMode === 'public' ? 'var(--color-border-primary)' : 'var(--color-border-tertiary)',
+                      backgroundColor: replyMode === 'public' ? 'var(--color-surface-inverted)' : 'var(--color-surface-neutral)',
+                      color: replyMode === 'public' ? '#ffffff' : 'var(--color-content-secondary)',
                       fontSize: '0.75rem',
                       fontWeight: 600,
                       cursor: 'pointer'
@@ -941,12 +843,12 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
                   <button
                     onClick={() => setReplyMode('internal')}
                     style={{
-                      padding: '4px 12px',
-                      borderRadius: '6px',
+                      padding: '5px 14px',
+                      borderRadius: '9999px',
                       border: '1px solid',
-                      borderColor: replyMode === 'internal' ? '#eab308' : 'var(--border-subtle)',
-                      background: replyMode === 'internal' ? 'rgba(234, 179, 8, 0.2)' : 'transparent',
-                      color: replyMode === 'internal' ? '#fde047' : 'var(--text-muted)',
+                      borderColor: replyMode === 'internal' ? '#d97706' : 'var(--color-border-tertiary)',
+                      backgroundColor: replyMode === 'internal' ? 'var(--color-highlight-yellow)' : 'var(--color-surface-neutral)',
+                      color: replyMode === 'internal' ? '#92400e' : 'var(--color-content-secondary)',
                       fontSize: '0.75rem',
                       fontWeight: 600,
                       cursor: 'pointer',
@@ -964,21 +866,15 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
                 <button
                   onClick={handleApplyAiSuggestion}
                   disabled={isGeneratingSuggestion}
+                  className="btn-secondary"
                   style={{
-                    background: 'transparent',
-                    border: '1px solid rgba(99, 102, 241, 0.3)',
-                    color: 'var(--accent-secondary)',
-                    borderRadius: '6px',
-                    padding: '4px 10px',
+                    padding: '5px 12px',
                     fontSize: '0.75rem',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
+                    borderRadius: '9999px'
                   }}
                 >
-                  <Sparkles size={13} />
-                  <span>{isGeneratingSuggestion ? 'Retrieving Grounded KB...' : 'Insert Grounded AI Suggestion'}</span>
+                  <Sparkles size={13} color="var(--color-brand-purple)" />
+                  <span>{isGeneratingSuggestion ? 'Retrieving Knowledge Base...' : 'Insert Grounded AI Suggestion'}</span>
                 </button>
               </div>
 
@@ -991,7 +887,7 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
                   placeholder={
                     replyMode === 'internal' 
                       ? 'Add private internal notes for the support team...'
-                      : 'Type reply to customer...'
+                      : 'Type response to customer...'
                   }
                   className="input-field"
                   style={{
@@ -999,8 +895,9 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
                     resize: 'none',
                     padding: '12px',
                     fontSize: '0.85rem',
-                    background: replyMode === 'internal' ? 'rgba(234, 179, 8, 0.04)' : 'rgba(255, 255, 255, 0.03)',
-                    borderColor: replyMode === 'internal' ? 'rgba(234, 179, 8, 0.3)' : 'var(--border-subtle)'
+                    backgroundColor: replyMode === 'internal' ? 'var(--color-highlight-yellow)' : 'var(--color-surface-neutral)',
+                    borderColor: replyMode === 'internal' ? '#d97706' : 'var(--color-border-tertiary)',
+                    borderRadius: 'var(--radius-s)'
                   }}
                 />
 
@@ -1010,9 +907,8 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
                     onClick={handleSendReply}
                     className="btn-primary"
                     style={{
-                      padding: '8px 16px',
-                      fontSize: '0.8rem',
-                      background: replyMode === 'internal' ? '#ca8a04' : undefined
+                      padding: '8px 18px',
+                      fontSize: '0.825rem'
                     }}
                   >
                     <Send size={14} />
@@ -1023,9 +919,9 @@ export const TicketsPage: React.FC<TicketsPageProps> = ({ initialSelectedTicket 
             </div>
           </>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)', gap: '12px' }}>
-            <Layers size={40} color="var(--border-subtle)" />
-            <div>Select a ticket from the queue to view thread & triage</div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--color-content-tertiary)', gap: '12px' }}>
+            <Layers size={40} color="var(--color-border-tertiary)" />
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: '1.1rem' }}>Select a ticket from the queue to view thread &amp; triage</div>
           </div>
         )}
       </div>
