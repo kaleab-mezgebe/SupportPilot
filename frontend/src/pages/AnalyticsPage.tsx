@@ -24,6 +24,14 @@ export const AnalyticsPage: React.FC = () => {
   const [slackTesting, setSlackTesting] = useState(false);
   const [slackResult, setSlackResult] = useState<{ success: boolean; message: string } | null>(null);
 
+  // Email Inbound Simulation State
+  const [emailFrom, setEmailFrom] = useState('billing@acme-corp.com');
+  const [emailSubject, setEmailSubject] = useState('Payment webhook failed [SP-1043]');
+  const [emailBody, setEmailBody] = useState('Hello support, can you please verify if our webhook endpoint is receiving transaction payloads?');
+  const [emailTesting, setEmailTesting] = useState(false);
+  const [emailResult, setEmailResult] = useState<{ success: boolean; message: string; ticketRef?: string } | null>(null);
+  const [showEmailForm, setShowEmailForm] = useState(false);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -54,6 +62,30 @@ export const AnalyticsPage: React.FC = () => {
       setSlackResult({ success: false, message: err.message || 'Failed to dispatch webhook' });
     } finally {
       setSlackTesting(false);
+    }
+  };
+
+  const handleSimulateEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!emailFrom.trim() || !emailSubject.trim()) return;
+    setEmailTesting(true);
+    setEmailResult(null);
+    try {
+      const res = await api.sendInboundEmailWebhook({
+        from: emailFrom.trim(),
+        to: 'support@supportpilot.io',
+        subject: emailSubject.trim(),
+        bodyText: emailBody.trim()
+      });
+      setEmailResult({
+        success: res.success,
+        message: `${res.message} (Action: ${res.action})`,
+        ticketRef: res.ticketReference
+      });
+    } catch (err: any) {
+      setEmailResult({ success: false, message: err.message || 'Failed to dispatch email webhook' });
+    } finally {
+      setEmailTesting(false);
     }
   };
 
@@ -258,12 +290,67 @@ export const AnalyticsPage: React.FC = () => {
                   <CheckCircle2 size={12} /> Active
                 </span>
               </div>
-              <code style={{ fontSize: '0.72rem', color: 'var(--color-content-primary)', backgroundColor: 'var(--color-surface-dim)', padding: '3px 8px', borderRadius: '4px', display: 'block', marginBottom: '6px' }}>
-                POST /api/webhooks/email/inbound
+              <code style={{ fontSize: '0.72rem', color: 'var(--color-content-primary)', backgroundColor: 'var(--color-surface-dim)', padding: '3px 8px', borderRadius: '4px', display: 'block', marginBottom: '8px' }}>
+                POST /api/webhooks/inbound-email
               </code>
-              <p style={{ fontSize: '0.78rem', color: 'var(--color-content-secondary)', margin: 0, lineHeight: 1.4 }}>
-                Converts incoming webhook payloads into threaded support messages.
+              <p style={{ fontSize: '0.78rem', color: 'var(--color-content-secondary)', margin: '0 0 10px 0', lineHeight: 1.4 }}>
+                Converts incoming SendGrid / Postmark webhook payloads into threaded tickets or replies.
               </p>
+
+              <button
+                type="button"
+                onClick={() => setShowEmailForm(!showEmailForm)}
+                className="btn-secondary"
+                style={{ fontSize: '0.75rem', padding: '5px 12px', width: '100%', justifyContent: 'center' }}
+              >
+                {showEmailForm ? 'Hide Email Simulator' : '⚡ Simulate Inbound Email Webhook'}
+              </button>
+
+              {showEmailForm && (
+                <form onSubmit={handleSimulateEmail} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+                  <input
+                    type="email"
+                    placeholder="From: billing@acme-corp.com"
+                    value={emailFrom}
+                    onChange={e => setEmailFrom(e.target.value)}
+                    className="input-field"
+                    style={{ fontSize: '0.78rem', padding: '6px 10px' }}
+                    required
+                  />
+                  <input
+                    type="text"
+                    placeholder="Subject: [SP-1043] Issue description"
+                    value={emailSubject}
+                    onChange={e => setEmailSubject(e.target.value)}
+                    className="input-field"
+                    style={{ fontSize: '0.78rem', padding: '6px 10px' }}
+                    required
+                  />
+                  <textarea
+                    rows={2}
+                    placeholder="Email body text..."
+                    value={emailBody}
+                    onChange={e => setEmailBody(e.target.value)}
+                    className="input-field"
+                    style={{ fontSize: '0.78rem', padding: '6px 10px', resize: 'vertical' }}
+                    required
+                  />
+                  <button
+                    type="submit"
+                    disabled={emailTesting}
+                    className="btn-primary"
+                    style={{ fontSize: '0.78rem', padding: '6px 12px', justifyContent: 'center' }}
+                  >
+                    <Send size={12} /> {emailTesting ? 'Processing Webhook...' : 'Dispatch Inbound Email'}
+                  </button>
+                  {emailResult && (
+                    <div style={{ marginTop: '4px', fontSize: '0.75rem', color: emailResult.success ? '#15803d' : '#b91c1c', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      {emailResult.success ? <CheckCircle2 size={13} /> : <AlertCircle size={13} />}
+                      <span>{emailResult.message}</span>
+                    </div>
+                  )}
+                </form>
+              )}
             </div>
 
             {/* Slack / Teams Integration */}

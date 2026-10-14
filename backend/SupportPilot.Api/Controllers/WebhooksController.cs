@@ -49,8 +49,8 @@ public class WebhooksController : ControllerBase
         var subject = payload.Subject.Trim();
         var content = !string.IsNullOrWhiteSpace(payload.BodyText) ? payload.BodyText.Trim() : (payload.BodyHtml ?? "No content.");
 
-        // Check if subject references an existing ticket (e.g. TCK-20261012-001 or TCK-TEST-001)
-        var ticketMatch = Regex.Match(subject, @"TCK-[A-Za-z0-9\-]+", RegexOptions.IgnoreCase);
+        // Check if subject references an existing ticket (e.g. SP-1043 or TCK-20261012-001)
+        var ticketMatch = Regex.Match(subject, @"(TCK|SP)-[A-Za-z0-9\-]+", RegexOptions.IgnoreCase);
         if (ticketMatch.Success)
         {
             var ticketRef = ticketMatch.Value.ToUpperInvariant();

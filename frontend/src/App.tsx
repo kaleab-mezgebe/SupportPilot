@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
+import { CommandPalette } from './components/CommandPalette';
+import { SettingsModal } from './components/SettingsModal';
+import { AuthModal } from './features/auth/AuthModal';
 import { DashboardPage } from './pages/DashboardPage';
 import { TicketsPage } from './pages/TicketsPage';
 import { KnowledgeBasePage } from './pages/KnowledgeBasePage';
@@ -14,6 +17,22 @@ export function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [isNewTicketModalOpen, setIsNewTicketModalOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
+
+  // Global Keyboard Shortcuts (⌘+K for Command Palette)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // New ticket form state
   const [title, setTitle] = useState('');
@@ -27,6 +46,19 @@ export function App() {
   const handleSelectTicketFromDashboard = (ticket: Ticket) => {
     setSelectedTicket(ticket);
     setActiveTab('tickets');
+  };
+
+  const handleOpenTicketByReference = async (ticketRef: string) => {
+    try {
+      const tickets = await ApiService.getTickets({ search: ticketRef });
+      const matched = tickets.find(t => t.ticketReference.toLowerCase() === ticketRef.toLowerCase()) || tickets[0];
+      if (matched) {
+        setSelectedTicket(matched);
+      }
+      setActiveTab('tickets');
+    } catch {
+      setActiveTab('tickets');
+    }
   };
 
   const handleCreateTicketSubmit = async (e: React.FormEvent) => {
@@ -56,11 +88,24 @@ export function App() {
   return (
     <div className="app-container">
       {/* Sidebar */}
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Sidebar 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab} 
+        onOpenSettings={() => setIsSettingsModalOpen(true)}
+      />
 
       {/* Main Workspace */}
       <div className="main-content">
-        <Header onNewTicketClick={() => setIsNewTicketModalOpen(true)} />
+        <Header 
+          onNewTicketClick={() => setIsNewTicketModalOpen(true)} 
+          onOpenSearch={() => setIsCommandPaletteOpen(true)}
+          onNavigateTab={(tab) => setActiveTab(tab)}
+          onOpenTicketReference={handleOpenTicketByReference}
+          onOpenAuthModal={(mode) => {
+            setAuthModalMode(mode || 'login');
+            setIsAuthModalOpen(true);
+          }}
+        />
 
         <main className="page-body">
           {activeTab === 'dashboard' && (
@@ -87,6 +132,35 @@ export function App() {
           )}
         </main>
       </div>
+
+      {/* Global Command Palette (⌘ + K) */}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        onNavigate={(tab) => setActiveTab(tab)}
+        onSelectTicket={(ticket) => {
+          setSelectedTicket(ticket);
+          setActiveTab('tickets');
+        }}
+        onOpenNewTicket={() => setIsNewTicketModalOpen(true)}
+        onOpenAuth={() => {
+          setAuthModalMode('login');
+          setIsAuthModalOpen(true);
+        }}
+      />
+
+      {/* Workspace Architecture & Settings Modal */}
+      <SettingsModal
+        isOpen={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
+      />
+
+      {/* Authentication Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        initialMode={authModalMode}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
 
       {/* New Ticket Modal */}
       {isNewTicketModalOpen && (

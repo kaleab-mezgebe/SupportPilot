@@ -7,16 +7,30 @@ import {
   BarChart3, 
   Settings
 } from 'lucide-react';
+import { useAuth } from '../features/auth/AuthContext';
 
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  openTicketCount?: number;
+  onOpenSettings?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ 
+  activeTab, 
+  setActiveTab, 
+  openTicketCount,
+  onOpenSettings 
+}) => {
+  const { user } = useAuth();
+
+  const userInitials = user?.fullName
+    ? user.fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+    : 'SP';
+
   const menuItems = [
     { id: 'dashboard', label: 'Overview', icon: LayoutDashboard, badge: null },
-    { id: 'tickets', label: 'Ticket Inbox', icon: TicketCheck, badge: '4' },
+    { id: 'tickets', label: 'Ticket Inbox', icon: TicketCheck, badge: openTicketCount ? String(openTicketCount) : '7' },
     { id: 'knowledge', label: 'Knowledge Base', icon: BookOpen, badge: 'AI' },
     { id: 'chat', label: 'Live Hub', icon: MessageSquareCode, badge: 'Live' },
     { id: 'analytics', label: 'Analytics & SLAs', icon: BarChart3, badge: null },
@@ -161,7 +175,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
             width: '30px',
             height: '30px',
             borderRadius: '50%',
-            backgroundColor: 'var(--color-surface-intro)',
+            backgroundColor: user?.role === 'Customer' ? 'var(--color-brand-blue)' : 'var(--color-surface-intro)',
             border: '1px solid var(--color-border-tertiary)',
             display: 'flex',
             alignItems: 'center',
@@ -169,20 +183,26 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
             fontWeight: 700,
             fontSize: '0.75rem',
             fontFamily: 'var(--font-mono)',
-            color: 'var(--color-content-primary)'
+            color: user?.role === 'Customer' ? '#ffffff' : 'var(--color-content-primary)'
           }}>
-            AR
+            {userInitials}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--color-content-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              Alex Rivera
+              {user?.fullName || 'Guest User'}
             </div>
             <div style={{ fontSize: '0.7rem', color: '#15803d', display: 'flex', alignItems: 'center', gap: '5px' }}>
               <span className="pulse-dot" style={{ width: '6px', height: '6px' }} />
-              Agent Active
+              {user?.role ? `${user.role} Active` : 'Workspace Active'}
             </div>
           </div>
-          <Settings size={15} color="var(--color-content-tertiary)" style={{ cursor: 'pointer' }} />
+          <button
+            onClick={onOpenSettings}
+            title="Workspace Settings"
+            style={{ background: 'none', border: 'none', padding: 0, display: 'flex', cursor: 'pointer', color: 'var(--color-content-tertiary)' }}
+          >
+            <Settings size={15} />
+          </button>
         </div>
       </div>
     </aside>

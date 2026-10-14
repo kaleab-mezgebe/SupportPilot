@@ -93,76 +93,76 @@ public static class DbInitializer
         var catAccount = await context.TicketCategories.FirstAsync(c => c.Name == "Account & RBAC");
 
         // Seed Knowledge Articles with Real Embeddings
-        if (!await context.KnowledgeArticles.AnyAsync())
+        var semanticService = new SemanticSearchService(context);
+        var kbArticles = new List<KnowledgeArticle>
         {
-            var semanticService = new SemanticSearchService(context);
-            var kbArticles = new List<KnowledgeArticle>
+            new()
             {
-                new()
-                {
-                    Id = Guid.NewGuid(),
-                    Title = "Configuring Custom Domains & SSL Termination",
-                    Slug = "configuring-custom-domains-ssl",
-                    Category = "Configuration & DNS",
-                    Content = "To point your custom domain to SupportPilot, create a CNAME record with your DNS registrar pointing to proxy.supportpilot.io. Ensure TTL is set under 300s during propagation. Automated Let's Encrypt SSL certificates are issued within 15 minutes of DNS propagation validation. If CAA records exist, ensure letsencrypt.org is permitted.",
-                    ViewCount = 1420,
-                    IsPublished = true,
-                    CreatedAtUtc = DateTime.UtcNow.AddDays(-15)
-                },
-                new()
-                {
-                    Id = Guid.NewGuid(),
-                    Title = "Grounded AI Co-Pilot Retrieval Workflows",
-                    Slug = "grounded-ai-copilot-retrieval",
-                    Category = "AI & Knowledge Retrieval",
-                    Content = "SupportPilot embeds indexed documentation into 128-dimensional vector embeddings. When drafting ticket replies or answering customer queries, cosine similarity search retrieves relevant chunks. A minimum confidence threshold (55%) prevents hallucinations; below this threshold, questions escalate to human agents.",
-                    ViewCount = 980,
-                    IsPublished = true,
-                    CreatedAtUtc = DateTime.UtcNow.AddDays(-12)
-                },
-                new()
-                {
-                    Id = Guid.NewGuid(),
-                    Title = "Role-Based Access Control and Tenant Isolation",
-                    Slug = "rbac-and-tenant-isolation",
-                    Category = "Account & RBAC",
-                    Content = "SupportPilot supports 4 core roles: Customer, SupportAgent, SupportManager, and SystemAdministrator. Customer accounts are isolated to their own organization's tickets and can never see internal agent notes. Agents operate across assigned team queues within their tenant workspace.",
-                    ViewCount = 730,
-                    IsPublished = true,
-                    CreatedAtUtc = DateTime.UtcNow.AddDays(-10)
-                },
-                new()
-                {
-                    Id = Guid.NewGuid(),
-                    Title = "Billing Invoices, VAT Numbers, and Subscription Upgrades",
-                    Slug = "billing-invoices-vat-numbers",
-                    Category = "Billing & Subscriptions",
-                    Content = "Invoices are generated on the 1st of each calendar month. To attach a corporate EU VAT or Tax ID to your receipts, update Organization Settings > Billing > Tax Information. For plan upgrades from Starter to Enterprise, seat licenses update immediately with prorated billing.",
-                    ViewCount = 610,
-                    IsPublished = true,
-                    CreatedAtUtc = DateTime.UtcNow.AddDays(-9)
-                },
-                new()
-                {
-                    Id = Guid.NewGuid(),
-                    Title = "Webhook Subscriptions for Ticket Events and SLA Alerts",
-                    Slug = "webhook-subscriptions-ticket-events",
-                    Category = "Configuration & DNS",
-                    Content = "SupportPilot allows subscribing to webhooks for events like ticket.created, ticket.status_changed, ticket.assigned, and sla.breached. Payloads are delivered via HTTPS POST with an HMAC-SHA256 signature in the X-SupportPilot-Signature header. Failed webhook deliveries retry 3 times with exponential backoff.",
-                    ViewCount = 520,
-                    IsPublished = true,
-                    CreatedAtUtc = DateTime.UtcNow.AddDays(-7)
-                }
-            };
+                Id = Guid.NewGuid(),
+                Title = "Configuring Custom Domains & SSL Termination",
+                Slug = "configuring-custom-domains-ssl",
+                Category = "Configuration & DNS",
+                Content = "To point your custom domain to SupportPilot, create a CNAME record with your DNS registrar pointing to proxy.supportpilot.io. Ensure TTL is set under 300s during propagation. Automated Let's Encrypt SSL certificates are issued within 15 minutes of DNS propagation validation. If CAA records exist, ensure letsencrypt.org is permitted.",
+                ViewCount = 1420,
+                IsPublished = true,
+                CreatedAtUtc = DateTime.UtcNow.AddDays(-15)
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Title = "Grounded AI Co-Pilot Retrieval Workflows",
+                Slug = "grounded-ai-copilot-retrieval",
+                Category = "AI & Knowledge Retrieval",
+                Content = "SupportPilot embeds indexed documentation into 128-dimensional vector embeddings. When drafting ticket replies or answering customer queries, cosine similarity search retrieves relevant chunks. A minimum confidence threshold (55%) prevents hallucinations; below this threshold, questions escalate to human agents.",
+                ViewCount = 980,
+                IsPublished = true,
+                CreatedAtUtc = DateTime.UtcNow.AddDays(-12)
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Title = "Role-Based Access Control and Tenant Isolation",
+                Slug = "rbac-and-tenant-isolation",
+                Category = "Account & RBAC",
+                Content = "SupportPilot supports 4 core roles: Customer, SupportAgent, SupportManager, and SystemAdministrator. Customer accounts are isolated to their own organization's tickets and can never see internal agent notes. Agents operate across assigned team queues within their tenant workspace.",
+                ViewCount = 730,
+                IsPublished = true,
+                CreatedAtUtc = DateTime.UtcNow.AddDays(-10)
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Title = "Billing Invoices, VAT Numbers, and Subscription Upgrades",
+                Slug = "billing-invoices-vat-numbers",
+                Category = "Billing & Subscriptions",
+                Content = "Invoices are generated on the 1st of each calendar month. To attach a corporate EU VAT or Tax ID to your receipts, update Organization Settings > Billing > Tax Information. For plan upgrades from Starter to Enterprise, seat licenses update immediately with prorated billing.",
+                ViewCount = 610,
+                IsPublished = true,
+                CreatedAtUtc = DateTime.UtcNow.AddDays(-9)
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Title = "Webhook Subscriptions for Ticket Events and SLA Alerts",
+                Slug = "webhook-subscriptions-ticket-events",
+                Category = "Configuration & DNS",
+                Content = "SupportPilot allows subscribing to webhooks for events like ticket.created, ticket.status_changed, ticket.assigned, and sla.breached. Payloads are delivered via HTTPS POST with an HMAC-SHA256 signature in the X-SupportPilot-Signature header. Failed webhook deliveries retry 3 times with exponential backoff.",
+                ViewCount = 520,
+                IsPublished = true,
+                CreatedAtUtc = DateTime.UtcNow.AddDays(-7)
+            }
+        };
 
-            foreach (var kb in kbArticles)
+        foreach (var kb in kbArticles)
+        {
+            if (!await context.KnowledgeArticles.AnyAsync(a => a.Title == kb.Title))
             {
                 var emb = semanticService.GenerateEmbedding($"{kb.Title} {kb.Category} {kb.Content}");
                 kb.SetEmbedding(emb);
                 context.KnowledgeArticles.Add(kb);
             }
-            await context.SaveChangesAsync();
         }
+        await context.SaveChangesAsync();
 
         // Seed Real Tickets, Messages, CSAT, and Audit Logs
         if (!await context.Tickets.AnyAsync(t => t.TicketReference == "SP-1043"))

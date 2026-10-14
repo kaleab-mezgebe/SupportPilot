@@ -1,18 +1,30 @@
 import React, { useEffect, useState } from 'react';
-import { Search, Bell, RefreshCw, Plus, User as UserIcon, Shield, LogOut, ChevronDown } from 'lucide-react';
+import { Search, Bell, RefreshCw, Plus, User as UserIcon, Shield, LogOut, ChevronDown, LogIn, UserPlus } from 'lucide-react';
 import { ApiService } from '../services/api';
 import { useAuth } from '../features/auth/AuthContext';
+import { NotificationCenter } from './NotificationCenter';
 import type { ApiHealthStatus, UserRole } from '../types';
 
 interface HeaderProps {
   onNewTicketClick?: () => void;
+  onOpenSearch?: () => void;
+  onNavigateTab?: (tab: string) => void;
+  onOpenTicketReference?: (ticketRef: string) => void;
+  onOpenAuthModal?: (mode?: 'login' | 'register') => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onNewTicketClick }) => {
+export const Header: React.FC<HeaderProps> = ({ 
+  onNewTicketClick,
+  onOpenSearch,
+  onNavigateTab,
+  onOpenTicketReference,
+  onOpenAuthModal
+}) => {
   const { user, switchDemoUser, logout } = useAuth();
   const [health, setHealth] = useState<ApiHealthStatus | null>(null);
   const [checking, setChecking] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
   const checkStatus = async () => {
     setChecking(true);
@@ -50,21 +62,43 @@ export const Header: React.FC<HeaderProps> = ({ onNewTicketClick }) => {
       top: 0,
       zIndex: 40
     }}>
-      {/* Search Bar */}
-      <div style={{ position: 'relative', width: '380px' }}>
+      {/* Search Bar (Command Palette Trigger) */}
+      <div 
+        onClick={onOpenSearch}
+        style={{ position: 'relative', width: '380px', cursor: 'pointer' }}
+      >
         <Search size={15} color="var(--color-content-tertiary)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
         <input 
           type="text" 
+          readOnly
+          onClick={onOpenSearch}
           placeholder="Search tickets, articles, customers (⌘ + K)..." 
           className="input-field" 
           style={{ 
             paddingLeft: '38px', 
+            paddingRight: '60px',
             height: '38px', 
             fontSize: '0.85rem',
             borderRadius: '9999px',
-            backgroundColor: 'var(--color-surface-neutral)'
+            backgroundColor: 'var(--color-surface-neutral)',
+            cursor: 'pointer'
           }} 
         />
+        <span style={{
+          position: 'absolute',
+          right: '12px',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          fontSize: '0.7rem',
+          fontFamily: 'var(--font-mono)',
+          padding: '2px 6px',
+          borderRadius: '4px',
+          backgroundColor: 'var(--color-surface-dim)',
+          color: 'var(--color-content-tertiary)',
+          pointerEvents: 'none'
+        }}>
+          ⌘K
+        </span>
       </div>
 
       {/* Status & Actions */}
@@ -103,21 +137,45 @@ export const Header: React.FC<HeaderProps> = ({ onNewTicketClick }) => {
         )}
 
         {/* Notifications Icon Button */}
-        <button style={{
-          width: '36px',
-          height: '36px',
-          borderRadius: '50%',
-          border: '1px solid var(--color-border-tertiary)',
-          backgroundColor: 'var(--color-surface-neutral)',
-          color: 'var(--color-content-secondary)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          transition: 'all 0.15s ease'
-        }}>
-          <Bell size={16} />
-        </button>
+        <div style={{ position: 'relative' }}>
+          <button 
+            onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+            title="Real-time Alerts & Notifications"
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              border: '1px solid var(--color-border-tertiary)',
+              backgroundColor: isNotificationOpen ? 'var(--color-surface-dim)' : 'var(--color-surface-neutral)',
+              color: 'var(--color-content-secondary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+              position: 'relative'
+            }}
+          >
+            <Bell size={16} />
+            <span style={{
+              position: 'absolute',
+              top: '6px',
+              right: '6px',
+              width: '7px',
+              height: '7px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--color-brand-coral)',
+              border: '1.5px solid var(--color-surface-neutral)'
+            }} />
+          </button>
+
+          <NotificationCenter
+            isOpen={isNotificationOpen}
+            onClose={() => setIsNotificationOpen(false)}
+            onNavigateTab={onNavigateTab || (() => {})}
+            onOpenTicketReference={onOpenTicketReference}
+          />
+        </div>
 
         {/* User Identity / Persona Switcher */}
         <div style={{ position: 'relative' }}>
@@ -166,7 +224,7 @@ export const Header: React.FC<HeaderProps> = ({ onNewTicketClick }) => {
               position: 'absolute',
               right: 0,
               top: '44px',
-              width: '250px',
+              width: '260px',
               backgroundColor: 'var(--color-surface-neutral)',
               border: '1px solid var(--color-border-tertiary)',
               borderRadius: 'var(--radius-m)',
@@ -174,7 +232,54 @@ export const Header: React.FC<HeaderProps> = ({ onNewTicketClick }) => {
               boxShadow: 'var(--shadow-lg)',
               zIndex: 50
             }}>
-              <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--color-border-tertiary)', marginBottom: '6px' }}>
+              {/* Custom Authentication Trigger */}
+              <div style={{ padding: '4px 6px', marginBottom: '4px' }}>
+                <button
+                  onClick={() => { setIsProfileMenuOpen(false); onOpenAuthModal?.('login'); }}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '8px 10px',
+                    backgroundColor: 'var(--color-surface-light)',
+                    border: '1px solid var(--color-border-tertiary)',
+                    borderRadius: '6px',
+                    color: 'var(--color-content-primary)',
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    marginBottom: '6px'
+                  }}
+                >
+                  <LogIn size={14} color="var(--color-brand-blue)" />
+                  <span>Sign In with Password...</span>
+                </button>
+                <button
+                  onClick={() => { setIsProfileMenuOpen(false); onOpenAuthModal?.('register'); }}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '8px 10px',
+                    backgroundColor: 'transparent',
+                    border: '1px solid transparent',
+                    borderRadius: '6px',
+                    color: 'var(--color-content-secondary)',
+                    fontSize: '0.78rem',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    textAlign: 'left'
+                  }}
+                >
+                  <UserPlus size={14} />
+                  <span>Create New Account</span>
+                </button>
+              </div>
+
+              <div style={{ padding: '8px 12px 6px', borderTop: '1px solid var(--color-border-tertiary)', marginBottom: '4px' }}>
                 <span style={{ fontSize: '0.7rem', color: 'var(--color-content-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
                   Switch Identity (Demo)
                 </span>
