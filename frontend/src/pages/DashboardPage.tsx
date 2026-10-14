@@ -38,6 +38,46 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onSelectTicket, on
     loadData();
   }, []);
 
+  // Editorial typewriter animation matching Ellipsus signature headline
+  const phrases = [
+    'crafted with clarity',
+    'powered by intelligence',
+    'resolved with precision',
+    'orchestrated in real-time',
+    'built for human empathy'
+  ];
+  const [phraseIndex, setPhraseIndex] = useState(0);
+  const [displayedText, setDisplayedText] = useState('crafted with clarity');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [typingSpeed, setTypingSpeed] = useState(70);
+
+  useEffect(() => {
+    const currentPhrase = phrases[phraseIndex];
+
+    const timer = setTimeout(() => {
+      if (!isDeleting) {
+        if (displayedText.length < currentPhrase.length) {
+          setDisplayedText(currentPhrase.slice(0, displayedText.length + 1));
+          setTypingSpeed(55 + Math.random() * 25);
+        } else {
+          setTypingSpeed(2400); // Pause on completed phrase
+          setIsDeleting(true);
+        }
+      } else {
+        if (displayedText.length > 0) {
+          setDisplayedText(currentPhrase.slice(0, displayedText.length - 1));
+          setTypingSpeed(28);
+        } else {
+          setIsDeleting(false);
+          setPhraseIndex((prev) => (prev + 1) % phrases.length);
+          setTypingSpeed(320);
+        }
+      }
+    }, typingSpeed);
+
+    return () => clearTimeout(timer);
+  }, [displayedText, isDeleting, phraseIndex, typingSpeed]);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
       {/* Introduction Hero Section (Exact aesthetic of https://ellipsus.com/#introduction) */}
@@ -45,34 +85,77 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onSelectTicket, on
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        gap: '24px'
+        gap: '24px',
+        position: 'relative'
       }}>
-        <div style={{ maxWidth: '780px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-            <span className="badge" style={{ 
-              backgroundColor: 'var(--color-surface-neutral)', 
-              borderColor: 'var(--color-border-tertiary)', 
-              color: 'var(--color-content-primary)',
-              fontFamily: 'var(--font-mono)' 
-            }}>
-              SupportPilot Workspace v1.0
-            </span>
-            <span style={{ fontSize: '0.8rem', color: 'var(--color-content-tertiary)' }}>•</span>
-            <span style={{ fontSize: '0.8rem', color: 'var(--color-content-secondary)', fontWeight: 500 }}>
-              AI-Augmented Customer Platform
+        {/* Subtle Editorial Curve Background Watermark */}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 264 241"
+          fill="none"
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            right: '-16px',
+            top: '-24px',
+            width: '260px',
+            height: '240px',
+            pointerEvents: 'none',
+            opacity: 0.08,
+            color: 'var(--color-content-primary)'
+          }}
+        >
+          <path
+            d="M7 84C4 75 14 62 30 50C46 38 72 25 105 20C138 15 178 18 210 32C242 46 266 71 254 98C242 125 194 154 152 172C110 190 74 197 50 188C26 179 14 154 18 132"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+          />
+          <path
+            d="M25 90C40 70 85 45 135 48C185 51 220 82 215 118C210 154 165 180 120 178C75 176 40 146 45 110"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeDasharray="4 4"
+          />
+        </svg>
+
+        <div style={{ maxWidth: '780px', position: 'relative', zIndex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px', flexWrap: 'wrap' }}>
+            <div className="hero-status-pill">
+              <span className="live-pulse-dot" />
+              <span>SupportPilot Workspace v1.0</span>
+            </div>
+            <span className="hero-sep-dot">•</span>
+            <span className="hero-badge-tag">
+              <Sparkles size={13} style={{ color: 'var(--color-brand-orange)' }} />
+              <span>AI-Augmented Customer Platform</span>
             </span>
           </div>
 
-          <h2 className="intro-hero-title">
-            Collaborative customer support, <span className="wiggle-accent">crafted with clarity</span><span className="blinking-cursor">|</span>
+          <h2 className="intro-hero-title" style={{ animation: 'heroFadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both' }}>
+            Collaborative customer support,{' '}
+            <span className="wiggle-accent">{displayedText}</span>
+            <span className="blinking-cursor">|</span>
           </h2>
 
-          <p className="intro-hero-subtitle">
-            Combines AI-assisted knowledge retrieval, precision ticket routing, and real-time agent communications in one editorial SaaS workspace. Built for human agents, augmented by intelligence.
+          <p className="intro-hero-subtitle" style={{ animation: 'heroFadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both' }}>
+            Combines{' '}
+            <span className="hero-annotation-blue" title="Semantic vector retrieval against grounded articles">
+              AI-assisted knowledge retrieval
+            </span>
+            ,{' '}
+            <span className="hero-annotation-purple" title="Rule-based triage and dynamic SLA triggers">
+              precision ticket routing
+            </span>
+            , and{' '}
+            <span className="hero-annotation-green" title="SignalR backplane with live agent presence">
+              real-time agent communications
+            </span>{' '}
+            in one editorial SaaS workspace. Built for human agents, augmented by intelligence.
           </p>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flexShrink: 0 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flexShrink: 0, position: 'relative', zIndex: 1 }}>
           <button onClick={onNavigateTickets} className="btn-primary" style={{ padding: '11px 22px', fontSize: '0.9rem' }}>
             <span>Explore Inbox Queues</span>
             <ArrowUpRight size={16} />
